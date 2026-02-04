@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # The Database
+  mongo:
+    image: mongo:latest
+    container_name: melktegna_db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+
+  # The UI to see your data (like PHPMyAdmin but for Mongo)
+  mongo-express:
+    image: mongo-express
+    container_name: melktegna_ui
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongo:27017/
+
+volumes:
+  mongo_data:
