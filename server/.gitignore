@@ -1,0 +1,12 @@
+# Dependency directories
+node_modules/
+
+# Environment variables (SECURITY RISK if pushed)
+.env
+
+# OS junk files
+.DS_Store
+Thumbs.db
+
+# Optional: Log files if you have any
+*.log
