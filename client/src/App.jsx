@@ -1,12 +1,14 @@
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Register from "./pages/Register";
 
-
-function App() {
-
+export default function App() {
   return (
-    <>
-      <div>hello</div>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/register" element={<Register />} />
+        {/* We will add Login and Chat routes later */}
+      </Routes>
+    </BrowserRouter>
+  );
 }
-
-export default App

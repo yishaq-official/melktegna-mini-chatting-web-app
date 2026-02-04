@@ -1,68 +1,49 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* client/src/index.css */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* 1. Reset and Base Fonts */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+body {
+  font-family: 'Josefin Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* 2. THEME CONFIGURATION */
+/* Default is Dark Mode (Telegram style) */
+:root {
+  --bg-color: #131324;
+  --form-bg: #00000076; /* Transparent dark glass */
+  --text-main: #ffffff;
+  --text-secondary: #dbdbdb;
+  --primary-color: #4e0eff;
+  --primary-hover: #3e0bca;
+  --input-bg: transparent;
+  --input-border: #4e0eff;
+  --input-focus-border: #997af0;
+  --link-color: #4e0eff;
+  --toast-bg: #131324;
+  --toast-text: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Light Mode Overrides */
+body.light-theme {
+  --bg-color: #f0f2f5;
+  --form-bg: #ffffff;
+  --text-main: #1a1a1a;
+  --text-secondary: #5e5e5e;
+  --primary-color: #4e0eff; /* Brand color usually stays similar */
+  --primary-hover: #3300cc;
+  --input-bg: #f5f6f7;
+  --input-border: #ccc;
+  --input-focus-border: #4e0eff;
+  --link-color: #3300cc;
+  --toast-bg: #ffffff;
+  --toast-text: #1a1a1a;
+  --shadow-color: rgba(0, 0, 0, 0.1);
 }
