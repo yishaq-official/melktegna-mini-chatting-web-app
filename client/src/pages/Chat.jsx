@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client"; // <-- Import Socket Client
 import styled from "styled-components";
 import { allUsersRoute, host } from "../utils/APIRoutes";
 import Contacts from "../components/Contacts";
@@ -9,11 +10,12 @@ import ChatContainer from "../components/ChatContainer";
 
 export default function Chat() {
   const navigate = useNavigate();
+  const socket = useRef(); // <-- Create a Ref for the socket
   const [contacts, setContacts] = useState([]);
   const [currentUser, setCurrentUser] = useState(undefined);
   const [currentChat, setCurrentChat] = useState(undefined);
 
-  // 1. Check if user is logged in
+  // 1. Check User Session
   useEffect(() => {
     const checkUser = async () => {
       if (!localStorage.getItem("melktegna-user")) {
@@ -25,7 +27,15 @@ export default function Chat() {
     checkUser();
   }, []);
 
-  // 2. Fetch all other users to fill the contact list
+  // 2. Initialize Socket Connection
+  useEffect(() => {
+    if (currentUser) {
+      socket.current = io(host); // Connect to Backend
+      socket.current.emit("add-user", currentUser._id); // Tell server "I am here"
+    }
+  }, [currentUser]);
+
+  // 3. Fetch Contacts
   useEffect(() => {
     const getContacts = async () => {
       if (currentUser) {
@@ -40,7 +50,6 @@ export default function Chat() {
     getContacts();
   }, [currentUser]);
 
-  // 3. Handle Chat Selection
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
   };
@@ -53,12 +62,15 @@ export default function Chat() {
           currentUser={currentUser} 
           changeChat={handleChatChange} 
         />
-        
-        {/* Logic: If chat is undefined, show Welcome. Else show Container */}
         {currentChat === undefined ? (
           <Welcome currentUser={currentUser} />
         ) : (
-          <ChatContainer currentChat={currentChat} currentUser={currentUser} />
+          /* Pass the Socket to the ChatContainer so it can send/receive events */
+          <ChatContainer 
+            currentChat={currentChat} 
+            currentUser={currentUser} 
+            socket={socket} 
+          />
         )}
       </div>
     </Container>
@@ -75,12 +87,11 @@ const Container = styled.div`
   background-color: var(--bg-color);
   
   .container {
-    height: 100vh; /* Changed from 85vh to 100vh */
-    width: 100vw;  /* Changed from 85vw to 100vw */
+    height: 100vh;
+    width: 100vw;
     background-color: var(--panel-bg);
     display: grid;
     grid-template-columns: 25% 75%;
-    
     @media screen and (min-width: 720px) and (max-width: 1080px) {
       grid-template-columns: 35% 65%;
     }

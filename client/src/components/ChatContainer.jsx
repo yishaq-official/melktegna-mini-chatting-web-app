@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import ChatInput from "./ChatInput";
-import Logout from "./Logout";
 import axios from "axios";
 import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
 
-export default function ChatContainer({ currentChat, currentUser }) {
+// Accept 'socket' as a new prop
+export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
+  const [arrivalMessage, setArrivalMessage] = useState(null); // <-- New State
   const scrollRef = useRef();
 
-  // 1. Fetch Chat History when the selected contact changes
   useEffect(() => {
     const fetchChat = async () => {
       if(currentChat){
@@ -23,22 +23,41 @@ export default function ChatContainer({ currentChat, currentUser }) {
     fetchChat();
   }, [currentChat]);
 
-  // 2. Send Message Logic
   const handleSendMsg = async (msg) => {
-    // A. Send to Backend (Database)
+    // 1. Save to Database
     await axios.post(sendMessageRoute, {
       from: currentUser._id,
       to: currentChat._id,
       message: msg,
     });
+    
+    // 2. Send via Socket (Real-time)
+    socket.current.emit("send-msg", {
+      to: currentChat._id,
+      from: currentUser._id,
+      msg,
+    });
 
-    // B. Update Local State (Immediate UI update)
+    // 3. Update Local View
     const msgs = [...messages];
     msgs.push({ fromSelf: true, message: msg });
     setMessages(msgs);
   };
 
-  // 3. Auto-Scroll to bottom when messages change
+  // 4. Listen for Incoming Messages
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.on("msg-recieve", (msg) => {
+        setArrivalMessage({ fromSelf: false, message: msg });
+      });
+    }
+  }, []);
+
+  // 5. Update Message List when Arrival Message changes
+  useEffect(() => {
+    arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
+  }, [arrivalMessage]);
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -78,7 +97,9 @@ export default function ChatContainer({ currentChat, currentUser }) {
   );
 }
 
+// ... (Styles remain exactly the same as before)
 const Container = styled.div`
+  /* ... copy previous styled component code here ... */
   display: grid;
   grid-template-rows: 10% 80% 10%;
   gap: 0.1rem;
@@ -111,7 +132,6 @@ const Container = styled.div`
     flex-direction: column;
     gap: 1rem;
     overflow: auto;
-    /* WhatsApp Dark Pattern Background */
     background-color: #0b141a; 
     background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
     
@@ -131,9 +151,9 @@ const Container = styled.div`
       .content {
         max-width: 40%;
         overflow-wrap: break-word;
-        padding: 0.5rem 1rem; /* Smaller, cleaner padding */
+        padding: 0.5rem 1rem;
         font-size: 0.95rem;
-        border-radius: 8px; /* Slightly rounded corners */
+        border-radius: 8px;
         color: #d1d7db;
         box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
       }
@@ -142,16 +162,16 @@ const Container = styled.div`
     .sended {
       justify-content: flex-end;
       .content {
-        background-color: var(--primary-color); /* Melktegna Green */
-        color: white; /* Text color for sent messages */
-        border-bottom-right-radius: 0; /* WhatsApp style corner */
+        background-color: var(--primary-color);
+        color: white;
+        border-bottom-right-radius: 0;
       }
     }
 
     .recieved {
       justify-content: flex-start;
       .content {
-        background-color: var(--panel-bg); /* Dark Grey for received */
+        background-color: var(--panel-bg);
         color: var(--text-main);
         border-bottom-left-radius: 0;
       }
