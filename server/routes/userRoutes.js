@@ -1,9 +1,16 @@
 const router = require("express").Router();
-// const { register } = require("../controllers/userController");
-const { register, login } = require("../controllers/userController");
+
+// 👇 THE FIX: Added 'setAvatar' and 'getAllUsers' to this list
+const { 
+  register, 
+  login, 
+  setAvatar, 
+  getAllUsers 
+} = require("../controllers/userController");
 
 router.post("/register", register);
 router.post("/login", login);
-router.post("/setavatar/:id", setAvatar);
+router.post("/setavatar/:id", setAvatar); // Now this will work
+router.get("/allusers/:id", getAllUsers);
 
 module.exports = router;

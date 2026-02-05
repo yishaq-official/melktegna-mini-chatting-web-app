@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { Buffer } from "buffer";
-import loader from "../assets/loader.gif"; // Make sure you have a gif here
+// import loader from "../assets/loader.gif"; // Make sure you have a gif here
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { setAvatarRoute } from "../utils/APIRoutes";
 
 export default function SetAvatar() {
-  const api = `https://api.multiavatar.com/4645646`; // Public Open Source Avatar API
+  // const api = `https://api.multiavatar.com/4645646`; // Public Open Source Avatar API
+  const api = "https://api.dicebear.com/9.x/avataaars/svg";
   const navigate = useNavigate();
   
   const [avatars, setAvatars] = useState([]);
@@ -34,22 +35,28 @@ export default function SetAvatar() {
   }, []);
 
   // 2. Fetch Avatars from API
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = [];
-      // We fetch 4 random avatars
-      for (let i = 0; i < 4; i++) {
-        const image = await axios.get(
-          `${api}/${Math.round(Math.random() * 1000)}`
-        );
-        const buffer = new Buffer(image.data);
-        data.push(buffer.toString("base64"));
-      }
-      setAvatars(data);
-      setIsLoading(false);
-    };
-    fetchData();
-  }, []);
+  // Replace the existing fetching useEffect with this:
+useEffect(() => {
+  const fetchData = async () => {
+    const data = [];
+    for (let i = 0; i < 4; i++) {
+      // Generate a random seed
+      const randomSeed = Math.round(Math.random() * 1000);
+
+      // Fetch the SVG
+      // Note: We use `?seed=` for DiceBear
+      const image = await axios.get(
+        `${api}?seed=${randomSeed}`
+      );
+
+      const buffer = new Buffer(image.data);
+      data.push(buffer.toString("base64"));
+    }
+    setAvatars(data);
+    setIsLoading(false);
+  };
+  fetchData();
+}, []);
 
   // 3. Set Profile Picture
   const setProfilePicture = async () => {
@@ -71,13 +78,16 @@ export default function SetAvatar() {
           "melktegna-user",
           JSON.stringify(user)
         );
-        navigate("/");
+        navigate("/chat");
       } else {
         toast.error("Error setting avatar. Please try again.", toastOptions);
       }
     }
   };
 
+
+  // ADD THIS instead:
+  const loader = "https://media.tenor.com/On7kvXhzml4AAAAj/loading-gif.gif";
   return (
     <>
       {isLoading ? (

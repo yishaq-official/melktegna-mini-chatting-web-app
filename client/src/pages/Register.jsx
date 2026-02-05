@@ -29,7 +29,7 @@ export default function Register() {
 
   useEffect(() => {
     if (localStorage.getItem("melktegna-user")) {
-      navigate("/");
+      navigate("/chat");
     }
   }, []);
 

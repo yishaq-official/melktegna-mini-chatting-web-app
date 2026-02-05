@@ -27,7 +27,7 @@ export default function Login() {
   // 1. Check if user is already logged in
   useEffect(() => {
     if (localStorage.getItem("melktegna-user")) {
-      navigate("/");
+      navigate("/chat");
     }
   }, []);
 
@@ -61,7 +61,7 @@ export default function Login() {
       }
       if (data.status === true) {
         localStorage.setItem("melktegna-user", JSON.stringify(data.user));
-        navigate("/");
+        navigate("/chat");
       }
     }
   };
