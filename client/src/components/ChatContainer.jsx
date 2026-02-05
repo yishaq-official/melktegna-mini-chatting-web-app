@@ -3,16 +3,18 @@ import styled from "styled-components";
 import ChatInput from "./ChatInput";
 import axios from "axios";
 import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
+import ChatInfo from "./ChatInfo";
 
-// Accept 'socket' as a new prop
 export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
-  const [arrivalMessage, setArrivalMessage] = useState(null); // <-- New State
+  const [arrivalMessage, setArrivalMessage] = useState(null);
   const scrollRef = useRef();
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
+  // 1. Fetch Chat History
   useEffect(() => {
     const fetchChat = async () => {
-      if(currentChat){
+      if (currentChat) {
         const response = await axios.post(recieveMessageRoute, {
           from: currentUser._id,
           to: currentChat._id,
@@ -23,28 +25,29 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     fetchChat();
   }, [currentChat]);
 
+  // 2. Handle Sending Messages
   const handleSendMsg = async (msg) => {
-    // 1. Save to Database
+    // Save to DB
     await axios.post(sendMessageRoute, {
       from: currentUser._id,
       to: currentChat._id,
       message: msg,
     });
-    
-    // 2. Send via Socket (Real-time)
+
+    // Send to Socket
     socket.current.emit("send-msg", {
       to: currentChat._id,
       from: currentUser._id,
       msg,
     });
 
-    // 3. Update Local View
+    // Update UI
     const msgs = [...messages];
     msgs.push({ fromSelf: true, message: msg });
     setMessages(msgs);
   };
 
-  // 4. Listen for Incoming Messages
+  // 3. Listen for Incoming Messages
   useEffect(() => {
     if (socket.current) {
       socket.current.on("msg-recieve", (msg) => {
@@ -53,11 +56,12 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     }
   }, []);
 
-  // 5. Update Message List when Arrival Message changes
+  // 4. Update Messages on Arrival
   useEffect(() => {
     arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
   }, [arrivalMessage]);
 
+  // 5. Auto-Scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -65,7 +69,8 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   return (
     <Container>
       <div className="chat-header">
-        <div className="user-details">
+        <div className="user-details"
+        onClick={() => setIsInfoOpen(true)} >
           <div className="avatar">
             <img
               src={`data:image/svg+xml;base64,${currentChat.avatarImage}`}
@@ -77,12 +82,15 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
           </div>
         </div>
       </div>
-      
       <div className="chat-messages">
         {messages.map((message, index) => {
           return (
             <div ref={scrollRef} key={index}>
-              <div className={`message ${message.fromSelf ? "sended" : "recieved"}`}>
+              <div
+                className={`message ${
+                  message.fromSelf ? "sended" : "recieved"
+                }`}
+              >
                 <div className="content">
                   <p>{message.message}</p>
                 </div>
@@ -91,19 +99,23 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
           );
         })}
       </div>
-      
       <ChatInput handleSendMsg={handleSendMsg} />
+      
+      <ChatInfo 
+        currentChat={currentChat} 
+        isOpen={isInfoOpen} 
+        toggleInfo={() => setIsInfoOpen(false)} 
+      />
     </Container>
   );
 }
 
-// ... (Styles remain exactly the same as before)
 const Container = styled.div`
-  /* ... copy previous styled component code here ... */
   display: grid;
   grid-template-rows: 10% 80% 10%;
   gap: 0.1rem;
   overflow: hidden;
+  height: 100vh; /* Ensure full height */
 
   .chat-header {
     display: flex;
@@ -112,16 +124,22 @@ const Container = styled.div`
     padding: 0 2rem;
     background-color: var(--panel-bg);
     border-bottom: 1px solid rgba(134, 150, 160, 0.15);
-    
+    z-index: 10; /* Ensure header stays on top */
+
     .user-details {
       display: flex;
       align-items: center;
       gap: 1rem;
-      .avatar img {
-        height: 3rem;
+      cursor: pointer; /* Makes it clickable for Profile Drawer later */
+      .avatar {
+        img {
+          height: 3rem;
+        }
       }
-      .username h3 {
-        color: var(--text-main);
+      .username {
+        h3 {
+          color: var(--text-main);
+        }
       }
     }
   }
@@ -132,9 +150,9 @@ const Container = styled.div`
     flex-direction: column;
     gap: 1rem;
     overflow: auto;
-    background-color: #0b141a; 
+    background-color: #0b141a;
     background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
-    
+
     &::-webkit-scrollbar {
       width: 0.2rem;
       &-thumb {
@@ -147,7 +165,7 @@ const Container = styled.div`
     .message {
       display: flex;
       align-items: center;
-      
+
       .content {
         max-width: 40%;
         overflow-wrap: break-word;
@@ -155,7 +173,7 @@ const Container = styled.div`
         font-size: 0.95rem;
         border-radius: 8px;
         color: #d1d7db;
-        box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+        box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
       }
     }
 
