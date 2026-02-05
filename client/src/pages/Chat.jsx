@@ -71,16 +71,16 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1rem;
   align-items: center;
   background-color: var(--bg-color);
   
   .container {
-    height: 85vh;
-    width: 85vw;
-    background-color: #00000076;
+    height: 100vh; /* Changed from 85vh to 100vh */
+    width: 100vw;  /* Changed from 85vw to 100vw */
+    background-color: var(--panel-bg);
     display: grid;
     grid-template-columns: 25% 75%;
+    
     @media screen and (min-width: 720px) and (max-width: 1080px) {
       grid-template-columns: 35% 65%;
     }

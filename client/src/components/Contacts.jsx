@@ -69,13 +69,13 @@ export default function Contacts({ contacts, currentUser, changeChat }) {
     </>
   );
 }
-
 const Container = styled.div`
   display: grid;
-  grid-template-rows: 10% 75% 15%;
+  grid-template-rows: 10% 83% 7%; /* Adjusted rows for better spacing */
   overflow: hidden;
-  background-color: var(--form-bg); /* Use theme variable */
-  
+  background-color: var(--panel-bg);
+  border-right: 1px solid rgba(134, 150, 160, 0.15);
+
   .brand {
     display: flex;
     align-items: center;
@@ -84,6 +84,8 @@ const Container = styled.div`
     h3 {
       color: var(--text-main);
       text-transform: uppercase;
+      font-size: 0.9rem; /* Smaller, cleaner font */
+      letter-spacing: 1px;
     }
   }
 
@@ -92,66 +94,62 @@ const Container = styled.div`
     flex-direction: column;
     align-items: center;
     overflow: auto;
-    gap: 0.8rem;
-    &::-webkit-scrollbar {
-      width: 0.2rem;
-      &-thumb {
-        background-color: #ffffff39;
-        width: 0.1rem;
-        border-radius: 1rem;
-      }
-    }
+    gap: 0; /* No gaps, use borders instead */
+    
     .contact {
-      background-color: #ffffff34;
-      min-height: 5rem;
+      background-color: transparent;
+      min-height: 4rem; /* Much smaller height */
       cursor: pointer;
-      width: 90%;
-      border-radius: 0.2rem;
-      padding: 0.4rem;
+      width: 100%;
+      padding: 0.5rem 1rem;
       display: flex;
       gap: 1rem;
       align-items: center;
-      transition: 0.5s ease-in-out;
-      .avatar {
-        img {
-          height: 3rem;
-        }
+      transition: 0.2s ease-in-out;
+      border-bottom: 1px solid rgba(134, 150, 160, 0.15); /* Separator line */
+      
+      .avatar img {
+        height: 2.5rem; /* Smaller avatar */
       }
-      .username {
-        h3 {
-          color: var(--text-main);
-        }
+      
+      .username h3 {
+        color: var(--text-main);
+        font-size: 0.95rem;
+        font-weight: 400;
+      }
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
       }
     }
+    
     .selected {
-      background-color: var(--primary-color);
+      background-color: var(--input-bg);
+      border-left: 4px solid var(--primary-color);
     }
   }
 
   .current-user {
-    background-color: #0d0d30;
+    background-color: var(--input-bg);
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: 2rem;
-    .avatar {
-      img {
-        height: 4rem;
-        max-inline-size: 100%;
-      }
+    padding: 0 1rem;
+    border-top: 1px solid rgba(134, 150, 160, 0.15);
+    
+    .user-details {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
     }
-    .username {
-      h2 {
-        color: white;
-      }
+    
+    .avatar img {
+      height: 2.5rem;
     }
-    @media screen and (min-width: 720px) and (max-width: 1080px) {
-      gap: 0.5rem;
-      .username {
-        h2 {
-          font-size: 1rem;
-        }
-      }
+    
+    .username h2 {
+      font-size: 0.9rem;
+      color: var(--text-main);
     }
   }
 `;

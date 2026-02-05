@@ -2,15 +2,46 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import ChatInput from "./ChatInput";
 import Logout from "./Logout";
-// import { v4 as uuidv4 } from "uuid"; // We will use this later for keys
 import axios from "axios";
+import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
 
 export default function ChatContainer({ currentChat, currentUser }) {
-  
+  const [messages, setMessages] = useState([]);
+  const scrollRef = useRef();
+
+  // 1. Fetch Chat History when the selected contact changes
+  useEffect(() => {
+    const fetchChat = async () => {
+      if(currentChat){
+        const response = await axios.post(recieveMessageRoute, {
+          from: currentUser._id,
+          to: currentChat._id,
+        });
+        setMessages(response.data);
+      }
+    };
+    fetchChat();
+  }, [currentChat]);
+
+  // 2. Send Message Logic
   const handleSendMsg = async (msg) => {
-    // Logic to send message to backend will go here in next phase
-    alert(`Message to send: ${msg}`);
+    // A. Send to Backend (Database)
+    await axios.post(sendMessageRoute, {
+      from: currentUser._id,
+      to: currentChat._id,
+      message: msg,
+    });
+
+    // B. Update Local State (Immediate UI update)
+    const msgs = [...messages];
+    msgs.push({ fromSelf: true, message: msg });
+    setMessages(msgs);
   };
+
+  // 3. Auto-Scroll to bottom when messages change
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <Container>
@@ -26,14 +57,20 @@ export default function ChatContainer({ currentChat, currentUser }) {
             <h3>{currentChat.username}</h3>
           </div>
         </div>
-        {/* We moved Logout to sidebar, but kept header clean for now */}
       </div>
       
       <div className="chat-messages">
-        {/* Messages will be mapped here later */}
-        <div className="message-placeholder">
-            Start a conversation with {currentChat.username}
-        </div>
+        {messages.map((message, index) => {
+          return (
+            <div ref={scrollRef} key={index}>
+              <div className={`message ${message.fromSelf ? "sended" : "recieved"}`}>
+                <div className="content">
+                  <p>{message.message}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
       
       <ChatInput handleSendMsg={handleSendMsg} />
@@ -43,21 +80,17 @@ export default function ChatContainer({ currentChat, currentUser }) {
 
 const Container = styled.div`
   display: grid;
-  grid-template-rows: 10% 80% 10%; /* Header - Messages - Input */
+  grid-template-rows: 10% 80% 10%;
   gap: 0.1rem;
   overflow: hidden;
-  
-  @media screen and (min-width: 720px) and (max-width: 1080px) {
-    grid-template-rows: 15% 70% 15%;
-  }
 
   .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 2rem;
-    background-color: var(--panel-bg); /* Distinct header */
-    border-bottom: 1px solid rgba(0,0,0,0.1);
+    background-color: var(--panel-bg);
+    border-bottom: 1px solid rgba(134, 150, 160, 0.15);
     
     .user-details {
       display: flex;
@@ -78,14 +111,50 @@ const Container = styled.div`
     flex-direction: column;
     gap: 1rem;
     overflow: auto;
-    background-color: #0b141a; /* Darker message area contrast */
-    background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); /* Subtle WhatsApp-like pattern opacity can be tweaked */
+    /* WhatsApp Dark Pattern Background */
+    background-color: #0b141a; 
+    background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
     
-    .message-placeholder {
-        color: var(--text-secondary);
-        text-align: center;
-        margin-top: 2rem;
-        font-size: 0.9rem;
+    &::-webkit-scrollbar {
+      width: 0.2rem;
+      &-thumb {
+        background-color: #ffffff39;
+        width: 0.1rem;
+        border-radius: 1rem;
+      }
+    }
+
+    .message {
+      display: flex;
+      align-items: center;
+      
+      .content {
+        max-width: 40%;
+        overflow-wrap: break-word;
+        padding: 0.5rem 1rem; /* Smaller, cleaner padding */
+        font-size: 0.95rem;
+        border-radius: 8px; /* Slightly rounded corners */
+        color: #d1d7db;
+        box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+      }
+    }
+
+    .sended {
+      justify-content: flex-end;
+      .content {
+        background-color: var(--primary-color); /* Melktegna Green */
+        color: white; /* Text color for sent messages */
+        border-bottom-right-radius: 0; /* WhatsApp style corner */
+      }
+    }
+
+    .recieved {
+      justify-content: flex-start;
+      .content {
+        background-color: var(--panel-bg); /* Dark Grey for received */
+        color: var(--text-main);
+        border-bottom-left-radius: 0;
+      }
     }
   }
 `;
