@@ -39,7 +39,7 @@ export default function SetAvatar() {
 useEffect(() => {
   const fetchData = async () => {
     const data = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       // Generate a random seed
       const randomSeed = Math.round(Math.random() * 1000);
 

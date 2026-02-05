@@ -1,6 +1,5 @@
-/* client/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
-/* 1. Reset and Base Fonts */
 * {
   margin: 0;
   padding: 0;
@@ -8,42 +7,59 @@
 }
 
 body {
-  font-family: 'Josefin Sans', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Inter', sans-serif; /* Cleaner, more modern font than Josefin */
+  overflow: hidden; /* Prevents double scrollbars */
 }
 
-/* 2. THEME CONFIGURATION */
-/* Default is Dark Mode (Telegram style) */
 :root {
-  --bg-color: #131324;
-  --form-bg: #00000076; /* Transparent dark glass */
-  --text-main: #ffffff;
-  --text-secondary: #dbdbdb;
-  --primary-color: #4e0eff;
-  --primary-hover: #3e0bca;
-  --input-bg: transparent;
-  --input-border: #4e0eff;
-  --input-focus-border: #997af0;
-  --link-color: #4e0eff;
-  --toast-bg: #131324;
-  --toast-text: #ffffff;
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  /* WhatsApp/Telegram Inspired Green Palette */
+  --primary-color: #00a884;       /* The "Melktegna" Green */
+  --primary-hover: #008f6f;
+  
+  --bg-color: #111b21;            /* Deep dark background (WhatsApp Web Dark) */
+  --panel-bg: #202c33;            /* Sidebar/Cards background */
+  
+  --text-main: #e9edef;           /* Soft White */
+  --text-secondary: #8696a0;      /* Muted Grey */
+  
+  --input-bg: #2a3942;
+  --input-border: transparent;    /* Clean inputs, no borders */
+  
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --toast-bg: #202c33;
 }
 
-/* Light Mode Overrides */
 body.light-theme {
-  --bg-color: #f0f2f5;
-  --form-bg: #ffffff;
-  --text-main: #1a1a1a;
-  --text-secondary: #5e5e5e;
-  --primary-color: #4e0eff; /* Brand color usually stays similar */
-  --primary-hover: #3300cc;
-  --input-bg: #f5f6f7;
-  --input-border: #ccc;
-  --input-focus-border: #4e0eff;
-  --link-color: #3300cc;
-  --toast-bg: #ffffff;
-  --toast-text: #1a1a1a;
-  --shadow-color: rgba(0, 0, 0, 0.1);
+  --bg-color: #efeae2;            /* Telegram/WhatsApp light BG pattern color */
+  --panel-bg: #ffffff;
+  --text-main: #111b21;
+  --text-secondary: #667781;
+  --primary-color: #008069;
+  --input-bg: #f0f2f5;
+  --input-border: #ffffff;
+}
+
+/* Scrollbar Styling (Slim & Professional) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(134, 150, 160, 0.3);
+  border-radius: 10px;
+}
+
+/* Global Component Overrides for "Professional" Look */
+button {
+  font-size: 0.9rem !important;
+  padding: 0.8rem 1.5rem !important; /* Smaller, tighter padding */
+  border-radius: 4px !important;     /* Less rounded, more serious */
+}
+
+input {
+  padding: 0.8rem 1rem !important;
+  font-size: 0.95rem !important;
+  border-radius: 8px !important;
 }

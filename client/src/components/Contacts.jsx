@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import Logout from "./Logout";
 // Note: You can change this Logo path to your own image if you have one
 // import Logo from "../assets/logo.svg"; 
 
@@ -61,6 +62,7 @@ export default function Contacts({ contacts, currentUser, changeChat }) {
             <div className="username">
               <h2>{currentUserName}</h2>
             </div>
+            <Logout />
           </div>
         </Container>
       )}

@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { allUsersRoute, host } from "../utils/APIRoutes";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
+import ChatContainer from "../components/ChatContainer";
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -53,11 +54,11 @@ export default function Chat() {
           changeChat={handleChatChange} 
         />
         
-        {/* If no chat selected, show Welcome. If selected, show Chat (Later) */}
+        {/* Logic: If chat is undefined, show Welcome. Else show Container */}
         {currentChat === undefined ? (
           <Welcome currentUser={currentUser} />
         ) : (
-          <div>Chat Container Coming Soon</div>
+          <ChatContainer currentChat={currentChat} currentUser={currentUser} />
         )}
       </div>
     </Container>
