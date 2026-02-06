@@ -32,11 +32,23 @@ module.exports.getMessages = async (req, res, next) => {
     // Format for Frontend
     const projectedMessages = messages.map((msg) => {
       return {
+        _id: msg._id,
         fromSelf: msg.sender.toString() === from, // Boolean: Did I send this?
         message: msg.message.text,
       };
     });
     res.json(projectedMessages);
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+module.exports.deleteMessage = async (req, res, next) => {
+  try {
+    const { msgId } = req.body;
+    // Security: In a real app, check if req.user._id === sender
+    await Messages.deleteOne({ _id: msgId });
+    return res.json({ status: true, msg: "Message deleted" });
   } catch (ex) {
     next(ex);
   }

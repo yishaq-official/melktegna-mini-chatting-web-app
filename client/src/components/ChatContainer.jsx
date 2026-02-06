@@ -2,13 +2,20 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import ChatInput from "./ChatInput";
 import ChatInfo from "./ChatInfo";
+import ContextMenu from "./ContextMenu";
 import axios from "axios";
-import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
+import { sendMessageRoute, recieveMessageRoute, deleteMessageRoute } from "../utils/APIRoutes"; // Ensure deleteMessageRoute is imported
 
 export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const scrollRef = useRef();
+  
+  // --- CONTEXT MENU STATE ---
+  const [contextMenuCordinates, setContextMenuCordinates] = useState({ x: 0, y: 0 });
+  const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const timerRef = useRef(null); // For Long Press
 
   // 1. Fetch Chat History
   useEffect(() => {
@@ -22,7 +29,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
       }
     };
     fetchChat();
-  }, [currentChat, currentUser]); // Added currentUser to dependencies
+  }, [currentChat, currentUser]);
 
   // 2. Handle Sending Messages
   const handleSendMsg = async (msg) => {
@@ -48,16 +55,12 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
 
   // 3. Listen for Incoming Messages
   useEffect(() => {
-    // Copy the ref to a variable so cleanup function works reliably
     const socketNode = socket.current;
-
     if (socketNode) {
       const handleMessage = (msg) => {
         setMessages((prev) => [...prev, { fromSelf: false, message: msg }]);
       };
-      
       socketNode.on("msg-recieve", handleMessage);
-
       return () => {
         socketNode.off("msg-recieve", handleMessage);
       };
@@ -68,6 +71,68 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // --- CONTEXT MENU HANDLERS ---
+
+  // Desktop Right Click
+  const handleContextMenu = (e, message) => {
+    e.preventDefault();
+    setContextMenuCordinates({ x: e.pageX, y: e.pageY });
+    setIsContextMenuVisible(true);
+    setSelectedMessage(message);
+  };
+
+  // Mobile Long Press Start
+  const handleTouchStart = (e, message) => {
+    timerRef.current = setTimeout(() => {
+      const touch = e.touches[0];
+      setContextMenuCordinates({ x: touch.pageX, y: touch.pageY });
+      setIsContextMenuVisible(true);
+      setSelectedMessage(message);
+    }, 600);
+  };
+
+  // Mobile Long Press End
+  const handleTouchEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  // --- MENU ACTIONS ---
+
+  const deleteMessage = async () => {
+    // 1. Optimistic Update (Remove from UI instantly)
+    const newMessages = messages.filter((msg) => msg !== selectedMessage);
+    setMessages(newMessages);
+    setIsContextMenuVisible(false);
+
+    // 2. Call Backend (If message has an ID)
+    if (selectedMessage._id) {
+        try {
+            await axios.post(deleteMessageRoute, { msgId: selectedMessage._id });
+        } catch (error) {
+            console.error("Error deleting message:", error);
+        }
+    }
+  };
+
+  const copyMessage = () => {
+    navigator.clipboard.writeText(selectedMessage.message);
+    setIsContextMenuVisible(false);
+  };
+
+  const replyMessage = () => {
+    alert(`Replying to: ${selectedMessage.message}`); // Placeholder for reply logic
+    setIsContextMenuVisible(false);
+  };
+
+  const contextMenuOptions = [
+    { name: "Reply", callback: replyMessage },
+    { name: "Copy", callback: copyMessage },
+    { name: "Delete", callback: deleteMessage },
+  ];
 
   return (
     <Container>
@@ -96,6 +161,10 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
                 className={`message ${
                   message.fromSelf ? "sended" : "recieved"
                 }`}
+                // Add Context Menu Triggers
+                onContextMenu={(e) => handleContextMenu(e, message)}
+                onTouchStart={(e) => handleTouchStart(e, message)}
+                onTouchEnd={handleTouchEnd}
               >
                 <div className="content">
                   <p>{message.message}</p>
@@ -113,6 +182,15 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         isOpen={isInfoOpen} 
         toggleInfo={() => setIsInfoOpen(false)} 
       />
+
+      {isContextMenuVisible && (
+        <ContextMenu
+          options={contextMenuOptions}
+          coordinates={contextMenuCordinates}
+          contextMenu={isContextMenuVisible}
+          setContextMenu={setIsContextMenuVisible}
+        />
+      )}
     </Container>
   );
 }
@@ -177,6 +255,9 @@ const Container = styled.div`
         border-radius: 8px;
         color: #d1d7db;
         box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+        /* Prevent text selection on mobile so long press works better */
+        user-select: none; 
+        -webkit-user-select: none;
       }
     }
 
