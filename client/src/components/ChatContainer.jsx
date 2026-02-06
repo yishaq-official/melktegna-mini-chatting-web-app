@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import ChatInput from "./ChatInput";
+import ChatInfo from "./ChatInfo";
 import axios from "axios";
 import { sendMessageRoute, recieveMessageRoute } from "../utils/APIRoutes";
-import ChatInfo from "./ChatInfo";
 
 export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
-  const [arrivalMessage, setArrivalMessage] = useState(null);
-  const scrollRef = useRef();
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const scrollRef = useRef();
 
   // 1. Fetch Chat History
   useEffect(() => {
     const fetchChat = async () => {
-      if (currentChat) {
+      if (currentChat && currentUser) {
         const response = await axios.post(recieveMessageRoute, {
           from: currentUser._id,
           to: currentChat._id,
@@ -23,7 +22,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
       }
     };
     fetchChat();
-  }, [currentChat]);
+  }, [currentChat, currentUser]); // Added currentUser to dependencies
 
   // 2. Handle Sending Messages
   const handleSendMsg = async (msg) => {
@@ -41,7 +40,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
       msg,
     });
 
-    // Update UI
+    // Update UI immediately
     const msgs = [...messages];
     msgs.push({ fromSelf: true, message: msg });
     setMessages(msgs);
@@ -49,19 +48,23 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
 
   // 3. Listen for Incoming Messages
   useEffect(() => {
-    if (socket.current) {
-      socket.current.on("msg-recieve", (msg) => {
-        setArrivalMessage({ fromSelf: false, message: msg });
-      });
+    // Copy the ref to a variable so cleanup function works reliably
+    const socketNode = socket.current;
+
+    if (socketNode) {
+      const handleMessage = (msg) => {
+        setMessages((prev) => [...prev, { fromSelf: false, message: msg }]);
+      };
+      
+      socketNode.on("msg-recieve", handleMessage);
+
+      return () => {
+        socketNode.off("msg-recieve", handleMessage);
+      };
     }
-  }, []);
+  }, [socket]);
 
-  // 4. Update Messages on Arrival
-  useEffect(() => {
-    arrivalMessage && setMessages((prev) => [...prev, arrivalMessage]);
-  }, [arrivalMessage]);
-
-  // 5. Auto-Scroll
+  // 4. Auto-Scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -69,8 +72,10 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   return (
     <Container>
       <div className="chat-header">
-        <div className="user-details"
-        onClick={() => setIsInfoOpen(true)} >
+        <div 
+          className="user-details" 
+          onClick={() => setIsInfoOpen(true)} 
+        >
           <div className="avatar">
             <img
               src={`data:image/svg+xml;base64,${currentChat.avatarImage}`}
@@ -82,6 +87,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
           </div>
         </div>
       </div>
+      
       <div className="chat-messages">
         {messages.map((message, index) => {
           return (
@@ -99,6 +105,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
           );
         })}
       </div>
+      
       <ChatInput handleSendMsg={handleSendMsg} />
       
       <ChatInfo 
@@ -115,7 +122,7 @@ const Container = styled.div`
   grid-template-rows: 10% 80% 10%;
   gap: 0.1rem;
   overflow: hidden;
-  height: 100vh; /* Ensure full height */
+  height: 100vh;
 
   .chat-header {
     display: flex;
@@ -124,22 +131,18 @@ const Container = styled.div`
     padding: 0 2rem;
     background-color: var(--panel-bg);
     border-bottom: 1px solid rgba(134, 150, 160, 0.15);
-    z-index: 10; /* Ensure header stays on top */
+    z-index: 10;
 
     .user-details {
       display: flex;
       align-items: center;
       gap: 1rem;
-      cursor: pointer; /* Makes it clickable for Profile Drawer later */
-      .avatar {
-        img {
-          height: 3rem;
-        }
+      cursor: pointer;
+      .avatar img {
+        height: 3rem;
       }
-      .username {
-        h3 {
-          color: var(--text-main);
-        }
+      .username h3 {
+        color: var(--text-main);
       }
     }
   }

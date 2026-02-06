@@ -1,20 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import Logout from "./Logout";
-// Note: You can change this Logo path to your own image if you have one
-// import Logo from "../assets/logo.svg"; 
+import { IoMdSettings } from "react-icons/io";
 
-export default function Contacts({ contacts, currentUser, changeChat }) {
-  const [currentUserName, setCurrentUserName] = useState(undefined);
-  const [currentUserImage, setCurrentUserImage] = useState(undefined);
+export default function Contacts({ contacts, currentUser, changeChat, onSettingsClick }) {
   const [currentSelected, setCurrentSelected] = useState(undefined);
-
-  useEffect(() => {
-    if (currentUser) {
-      setCurrentUserImage(currentUser.avatarImage);
-      setCurrentUserName(currentUser.username);
-    }
-  }, [currentUser]);
 
   const changeCurrentChat = (index, contact) => {
     setCurrentSelected(index);
@@ -23,10 +13,9 @@ export default function Contacts({ contacts, currentUser, changeChat }) {
 
   return (
     <>
-      {currentUserImage && currentUserName && (
+      {currentUser && currentUser.avatarImage && currentUser.username && (
         <Container>
           <div className="brand">
-            {/* <img src={Logo} alt="logo" /> */}
             <h3>Melktegna</h3>
           </div>
           <div className="contacts">
@@ -52,26 +41,40 @@ export default function Contacts({ contacts, currentUser, changeChat }) {
               );
             })}
           </div>
+          
           <div className="current-user">
-            <div className="avatar">
-              <img
-                src={`data:image/svg+xml;base64,${currentUserImage}`}
-                alt="avatar"
-              />
+            <div 
+                className="user-details" 
+                onClick={onSettingsClick}
+                title="Settings"
+            >
+              <div className="avatar">
+                <img
+                  src={`data:image/svg+xml;base64,${currentUser.avatarImage}`}
+                  alt="avatar"
+                />
+              </div>
+              <div className="username">
+                <h2>{currentUser.username}</h2>
+              </div>
             </div>
-            <div className="username">
-              <h2>{currentUserName}</h2>
+            
+            <div className="actions">
+                <Button onClick={onSettingsClick} title="Settings">
+                    <IoMdSettings />
+                </Button>
+                <Logout />
             </div>
-            <Logout />
           </div>
         </Container>
       )}
     </>
   );
 }
+
 const Container = styled.div`
   display: grid;
-  grid-template-rows: 10% 83% 7%; /* Adjusted rows for better spacing */
+  grid-template-rows: 10% 83% 7%;
   overflow: hidden;
   background-color: var(--panel-bg);
   border-right: 1px solid rgba(134, 150, 160, 0.15);
@@ -84,7 +87,7 @@ const Container = styled.div`
     h3 {
       color: var(--text-main);
       text-transform: uppercase;
-      font-size: 0.9rem; /* Smaller, cleaner font */
+      font-size: 0.9rem;
       letter-spacing: 1px;
     }
   }
@@ -94,11 +97,11 @@ const Container = styled.div`
     flex-direction: column;
     align-items: center;
     overflow: auto;
-    gap: 0; /* No gaps, use borders instead */
+    gap: 0;
     
     .contact {
       background-color: transparent;
-      min-height: 4rem; /* Much smaller height */
+      min-height: 4rem;
       cursor: pointer;
       width: 100%;
       padding: 0.5rem 1rem;
@@ -106,10 +109,10 @@ const Container = styled.div`
       gap: 1rem;
       align-items: center;
       transition: 0.2s ease-in-out;
-      border-bottom: 1px solid rgba(134, 150, 160, 0.15); /* Separator line */
+      border-bottom: 1px solid rgba(134, 150, 160, 0.15);
       
       .avatar img {
-        height: 2.5rem; /* Smaller avatar */
+        height: 2.5rem;
       }
       
       .username h3 {
@@ -141,15 +144,39 @@ const Container = styled.div`
       display: flex;
       align-items: center;
       gap: 0.8rem;
+      cursor: pointer;
+      
+      .avatar img {
+        height: 2.5rem;
+      }
+      
+      .username h2 {
+        font-size: 0.9rem;
+        color: var(--text-main);
+      }
     }
-    
-    .avatar img {
-      height: 2.5rem;
+
+    .actions {
+        display: flex;
+        gap: 0.5rem;
     }
-    
-    .username h2 {
-      font-size: 0.9rem;
-      color: var(--text-main);
-    }
+  }
+`;
+
+const Button = styled.button`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem !important;
+  border-radius: 0.5rem;
+  background-color: var(--primary-color);
+  border: none;
+  cursor: pointer;
+  svg {
+    font-size: 1.3rem;
+    color: white;
+  }
+  &:hover {
+      background-color: var(--primary-hover);
   }
 `;

@@ -7,6 +7,7 @@ import { allUsersRoute, host } from "../utils/APIRoutes";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
 import ChatContainer from "../components/ChatContainer";
+import Settings from "../components/Settings";
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Chat() {
   const [contacts, setContacts] = useState([]);
   const [currentUser, setCurrentUser] = useState(undefined);
   const [currentChat, setCurrentChat] = useState(undefined);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // 1. Check User Session
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function Chat() {
       }
     };
     checkUser();
-  }, []);
+  }, [navigate]);
 
   // 2. Initialize Socket Connection
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function Chat() {
       }
     };
     getContacts();
-  }, [currentUser]);
+  }, [currentUser, navigate]);
 
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
@@ -61,6 +63,7 @@ export default function Chat() {
           contacts={contacts} 
           currentUser={currentUser} 
           changeChat={handleChatChange} 
+          onSettingsClick={() => setIsSettingsOpen(true)}
         />
         {currentChat === undefined ? (
           <Welcome currentUser={currentUser} />
@@ -70,6 +73,14 @@ export default function Chat() {
             currentChat={currentChat} 
             currentUser={currentUser} 
             socket={socket} 
+          />
+        )}
+        {/* Render Settings Drawer */}
+        {currentUser && (
+          <Settings 
+            isOpen={isSettingsOpen} 
+            toggleSettings={() => setIsSettingsOpen(false)} 
+            currentUser={currentUser}
           />
         )}
       </div>
