@@ -40,7 +40,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     // If replying, prepend the quoted text (Simple implementation)
     let finalMsg = msg;
     if (replyingTo) {
-        finalMsg = `> Replying to: "${replyingTo.message}"\n\n${msg}`;
+        finalMsg = `> Replying to ${replyingTo.senderName}:\n"${replyingTo.message}"\n\n${msg}`;
     }
 
     await axios.post(sendMessageRoute, {
@@ -129,9 +129,13 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   };
 
   const replyMessage = () => {
-    setReplyingTo(selectedMessage); // Set the state
+    // Determine who sent the original message
+    const senderName = selectedMessage.fromSelf ? "You" : currentChat.username;
+    
+    // Set state with the name included
+    setReplyingTo({ ...selectedMessage, senderName }); 
+    
     setIsContextMenuVisible(false);
-    // Focus input happens in ChatInput component
   };
 
   const contextMenuOptions = [

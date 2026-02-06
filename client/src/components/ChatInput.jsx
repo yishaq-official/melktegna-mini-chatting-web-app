@@ -34,7 +34,8 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply }) {
       {replyingTo && (
         <div className="reply-preview">
           <div className="reply-content">
-            <span className="reply-title">Replying to message</span>
+            {/* Display the Name here */}
+            <span className="reply-title">Replying to {replyingTo.senderName}</span>
             <p className="reply-text">{replyingTo.message.substring(0, 50)}...</p>
           </div>
           <IoMdClose onClick={cancelReply} className="close-reply" />
