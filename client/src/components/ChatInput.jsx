@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BsEmojiSmileFill } from "react-icons/bs";
-import { IoMdSend } from "react-icons/io";
+import { IoMdSend, IoMdClose } from "react-icons/io";
 import styled from "styled-components";
 import Picker from "emoji-picker-react";
 
-export default function ChatInput({ handleSendMsg }) {
+export default function ChatInput({ handleSendMsg, replyingTo, cancelReply }) {
   const [msg, setMsg] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const inputRef = useRef(null);
+
+  // Focus input when replying starts
+  useEffect(() => {
+    if (replyingTo && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [replyingTo]);
 
   const handleEmojiClick = (emojiObject) => {
     setMsg((prevMsg) => prevMsg + emojiObject.emoji);
@@ -22,6 +30,17 @@ export default function ChatInput({ handleSendMsg }) {
 
   return (
     <Container>
+      {/* Reply Preview Box */}
+      {replyingTo && (
+        <div className="reply-preview">
+          <div className="reply-content">
+            <span className="reply-title">Replying to message</span>
+            <p className="reply-text">{replyingTo.message.substring(0, 50)}...</p>
+          </div>
+          <IoMdClose onClick={cancelReply} className="close-reply" />
+        </div>
+      )}
+
       <div className="button-container">
         <div className="emoji">
           <BsEmojiSmileFill onClick={() => setShowEmojiPicker(!showEmojiPicker)} />
@@ -34,6 +53,7 @@ export default function ChatInput({ handleSendMsg }) {
       </div>
       <form className="input-container" onSubmit={(event) => sendChat(event)}>
         <input
+          ref={inputRef}
           type="text"
           placeholder="Type a message"
           onChange={(e) => setMsg(e.target.value)}
@@ -54,6 +74,49 @@ const Container = styled.div`
   background-color: var(--panel-bg);
   padding: 0 2rem;
   padding-bottom: 0.3rem;
+  position: relative; /* Needed for absolute positioning of reply box */
+
+  .reply-preview {
+    position: absolute;
+    bottom: 100%; /* Sits exactly on top of the input */
+    left: 0;
+    width: 100%;
+    background-color: #1f2c34; /* Slightly lighter than panel */
+    padding: 0.5rem 2rem;
+    border-top: 1px solid var(--primary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 5;
+    
+    .reply-content {
+      border-left: 4px solid var(--primary-color);
+      padding-left: 1rem;
+      
+      .reply-title {
+        color: var(--primary-color);
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: block;
+      }
+      .reply-text {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    
+    .close-reply {
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      &:hover {
+        color: white;
+      }
+    }
+  }
   
   .button-container {
     display: flex;
@@ -69,7 +132,7 @@ const Container = styled.div`
       }
       .emoji-picker-react {
         position: absolute;
-        top: -470px; /* Position picker above input */
+        top: -470px;
         background-color: var(--panel-bg);
         box-shadow: 0 5px 10px var(--shadow-color);
         border-color: var(--primary-color);
@@ -124,7 +187,7 @@ const Container = styled.div`
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: transparent; /* Clean look */
+      background-color: transparent;
       border: none;
       svg {
         font-size: 1.5rem;

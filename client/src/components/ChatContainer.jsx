@@ -4,7 +4,7 @@ import ChatInput from "./ChatInput";
 import ChatInfo from "./ChatInfo";
 import ContextMenu from "./ContextMenu";
 import axios from "axios";
-import { sendMessageRoute, recieveMessageRoute, deleteMessageRoute } from "../utils/APIRoutes"; // Ensure deleteMessageRoute is imported
+import { sendMessageRoute, recieveMessageRoute, deleteMessageRoute } from "../utils/APIRoutes";
 
 export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
@@ -15,7 +15,10 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [contextMenuCordinates, setContextMenuCordinates] = useState({ x: 0, y: 0 });
   const [isContextMenuVisible, setIsContextMenuVisible] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const timerRef = useRef(null); // For Long Press
+  const timerRef = useRef(null);
+  
+  // --- REPLY STATE (NEW) ---
+  const [replyingTo, setReplyingTo] = useState(null);
 
   // 1. Fetch Chat History
   useEffect(() => {
@@ -33,24 +36,31 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
 
   // 2. Handle Sending Messages
   const handleSendMsg = async (msg) => {
-    // Save to DB
+    // Construct the message object
+    // If replying, prepend the quoted text (Simple implementation)
+    let finalMsg = msg;
+    if (replyingTo) {
+        finalMsg = `> Replying to: "${replyingTo.message}"\n\n${msg}`;
+    }
+
     await axios.post(sendMessageRoute, {
       from: currentUser._id,
       to: currentChat._id,
-      message: msg,
+      message: finalMsg,
     });
 
-    // Send to Socket
     socket.current.emit("send-msg", {
       to: currentChat._id,
       from: currentUser._id,
-      msg,
+      msg: finalMsg,
     });
 
-    // Update UI immediately
     const msgs = [...messages];
-    msgs.push({ fromSelf: true, message: msg });
+    msgs.push({ fromSelf: true, message: finalMsg });
     setMessages(msgs);
+    
+    // Clear reply state after sending
+    setReplyingTo(null);
   };
 
   // 3. Listen for Incoming Messages
@@ -72,9 +82,8 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // --- CONTEXT MENU HANDLERS ---
+  // --- HANDLERS ---
 
-  // Desktop Right Click
   const handleContextMenu = (e, message) => {
     e.preventDefault();
     setContextMenuCordinates({ x: e.pageX, y: e.pageY });
@@ -82,7 +91,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     setSelectedMessage(message);
   };
 
-  // Mobile Long Press Start
   const handleTouchStart = (e, message) => {
     timerRef.current = setTimeout(() => {
       const touch = e.touches[0];
@@ -92,7 +100,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     }, 600);
   };
 
-  // Mobile Long Press End
   const handleTouchEnd = () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -103,12 +110,10 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   // --- MENU ACTIONS ---
 
   const deleteMessage = async () => {
-    // 1. Optimistic Update (Remove from UI instantly)
     const newMessages = messages.filter((msg) => msg !== selectedMessage);
     setMessages(newMessages);
     setIsContextMenuVisible(false);
 
-    // 2. Call Backend (If message has an ID)
     if (selectedMessage._id) {
         try {
             await axios.post(deleteMessageRoute, { msgId: selectedMessage._id });
@@ -124,8 +129,9 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   };
 
   const replyMessage = () => {
-    alert(`Replying to: ${selectedMessage.message}`); // Placeholder for reply logic
+    setReplyingTo(selectedMessage); // Set the state
     setIsContextMenuVisible(false);
+    // Focus input happens in ChatInput component
   };
 
   const contextMenuOptions = [
@@ -137,15 +143,9 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   return (
     <Container>
       <div className="chat-header">
-        <div 
-          className="user-details" 
-          onClick={() => setIsInfoOpen(true)} 
-        >
+        <div className="user-details" onClick={() => setIsInfoOpen(true)}>
           <div className="avatar">
-            <img
-              src={`data:image/svg+xml;base64,${currentChat.avatarImage}`}
-              alt=""
-            />
+            <img src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} alt="" />
           </div>
           <div className="username">
             <h3>{currentChat.username}</h3>
@@ -158,16 +158,14 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
           return (
             <div ref={scrollRef} key={index}>
               <div
-                className={`message ${
-                  message.fromSelf ? "sended" : "recieved"
-                }`}
-                // Add Context Menu Triggers
+                className={`message ${message.fromSelf ? "sended" : "recieved"}`}
                 onContextMenu={(e) => handleContextMenu(e, message)}
                 onTouchStart={(e) => handleTouchStart(e, message)}
                 onTouchEnd={handleTouchEnd}
               >
                 <div className="content">
-                  <p>{message.message}</p>
+                  {/* Basic rendering of replied messages */}
+                  <p style={{whiteSpace: 'pre-wrap'}}>{message.message}</p>
                 </div>
               </div>
             </div>
@@ -175,7 +173,12 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         })}
       </div>
       
-      <ChatInput handleSendMsg={handleSendMsg} />
+      {/* Pass reply state to Input */}
+      <ChatInput 
+        handleSendMsg={handleSendMsg} 
+        replyingTo={replyingTo} 
+        cancelReply={() => setReplyingTo(null)}
+      />
       
       <ChatInfo 
         currentChat={currentChat} 
@@ -255,7 +258,6 @@ const Container = styled.div`
         border-radius: 8px;
         color: #d1d7db;
         box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
-        /* Prevent text selection on mobile so long press works better */
         user-select: none; 
         -webkit-user-select: none;
       }
