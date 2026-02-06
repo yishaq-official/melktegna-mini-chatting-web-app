@@ -40,6 +40,29 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     // If replying, prepend the quoted text (Simple implementation)
     let finalMsg = msg;
     if (replyingTo) {
+
+      // 1. CLEAN THE TEXT
+        // If the message we are replying to is ALREADY a reply, 
+        // we want to strip the old "Replying to..." header.
+        // Otherwise, we get a loop: "> Replying to > Replying to..."
+        
+        let textToQuote = replyingTo.message;
+        
+        // Regex Explanation:
+        // ^> Replying to   -> Starts with header
+        // .*?:\n"          -> Matches Name and opening quote
+        // [\s\S]*?         -> Matches ANY content (including newlines) non-greedily
+        // "\n\n            -> Matches closing quote and double newline
+        const replyHeaderRegex = /^> Replying to .*?:\n"[\s\S]*?"\n\n/;
+        
+        if (replyHeaderRegex.test(textToQuote)) {
+            // Remove the header, keep only the real message
+            textToQuote = textToQuote.replace(replyHeaderRegex, "");
+        }
+
+        // 2. CONSTRUCT NEW MESSAGE
+        // Now 'textToQuote' is clean (just the latest message)
+        
         finalMsg = `> Replying to ${replyingTo.senderName}:\n"${replyingTo.message}"\n\n${msg}`;
     }
 
