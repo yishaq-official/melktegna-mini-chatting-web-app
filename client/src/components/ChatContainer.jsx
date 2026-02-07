@@ -17,7 +17,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const timerRef = useRef(null);
   
-  // --- REPLY STATE (NEW) ---
+  // --- REPLY STATE ---
   const [replyingTo, setReplyingTo] = useState(null);
 
   // 1. Fetch Chat History
@@ -34,36 +34,25 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     fetchChat();
   }, [currentChat, currentUser]);
 
-  // 2. Handle Sending Messages
+  // 2. Handle Sending Messages (With Reply Cleaning Logic)
   const handleSendMsg = async (msg) => {
-    // Construct the message object
-    // If replying, prepend the quoted text (Simple implementation)
     let finalMsg = msg;
+    
     if (replyingTo) {
-
-      // 1. CLEAN THE TEXT
-        // If the message we are replying to is ALREADY a reply, 
-        // we want to strip the old "Replying to..." header.
-        // Otherwise, we get a loop: "> Replying to > Replying to..."
-        
+        // 1. CLEAN THE TEXT
+        // Remove old headers to prevent infinite nesting loops
         let textToQuote = replyingTo.message;
         
-        // Regex Explanation:
-        // ^> Replying to   -> Starts with header
-        // .*?:\n"          -> Matches Name and opening quote
-        // [\s\S]*?         -> Matches ANY content (including newlines) non-greedily
-        // "\n\n            -> Matches closing quote and double newline
+        // Regex matches the "> Replying to X:\n"Quote"\n\n" pattern
         const replyHeaderRegex = /^> Replying to .*?:\n"[\s\S]*?"\n\n/;
         
         if (replyHeaderRegex.test(textToQuote)) {
-            // Remove the header, keep only the real message
+            // Strip the old header, keep only the original user text
             textToQuote = textToQuote.replace(replyHeaderRegex, "");
         }
 
         // 2. CONSTRUCT NEW MESSAGE
-        // Now 'textToQuote' is clean (just the latest message)
-        
-        finalMsg = `> Replying to ${replyingTo.senderName}:\n"${replyingTo.message}"\n\n${msg}`;
+        finalMsg = `> Replying to ${replyingTo.senderName}:\n"${textToQuote}"\n\n${msg}`;
     }
 
     await axios.post(sendMessageRoute, {
@@ -152,13 +141,32 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   };
 
   const replyMessage = () => {
-    // Determine who sent the original message
     const senderName = selectedMessage.fromSelf ? "You" : currentChat.username;
-    
-    // Set state with the name included
     setReplyingTo({ ...selectedMessage, senderName }); 
-    
     setIsContextMenuVisible(false);
+  };
+
+  // --- RENDER HELPER FOR MESSAGES (TELEGRAM STYLE) ---
+  const renderMessageContent = (msgText) => {
+    // Detect reply format: > Replying to NAME:\n"TEXT"\n\nACTUAL_MESSAGE
+    const replyRegex = /^> Replying to (.*?):\n"([\s\S]*?)"\n\n([\s\S]*)/;
+    const match = msgText.match(replyRegex);
+
+    if (match) {
+      const [, name, quotedText, actualMessage] = match;
+      return (
+        <div className="message-wrapper">
+          <div className="reply-block">
+            <span className="reply-name">{name}</span>
+            <div className="reply-text">{quotedText}</div>
+          </div>
+          <p className="actual-text">{actualMessage}</p>
+        </div>
+      );
+    }
+    
+    // Normal message
+    return <p>{msgText}</p>;
   };
 
   const contextMenuOptions = [
@@ -191,8 +199,8 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
                 onTouchEnd={handleTouchEnd}
               >
                 <div className="content">
-                  {/* Basic rendering of replied messages */}
-                  <p style={{whiteSpace: 'pre-wrap'}}>{message.message}</p>
+                  {/* Use Helper Function to Render Content */}
+                  {renderMessageContent(message.message)}
                 </div>
               </div>
             </div>
@@ -200,7 +208,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         })}
       </div>
       
-      {/* Pass reply state to Input */}
       <ChatInput 
         handleSendMsg={handleSendMsg} 
         replyingTo={replyingTo} 
@@ -246,12 +253,8 @@ const Container = styled.div`
       align-items: center;
       gap: 1rem;
       cursor: pointer;
-      .avatar img {
-        height: 3rem;
-      }
-      .username h3 {
-        color: var(--text-main);
-      }
+      .avatar img { height: 3rem; }
+      .username h3 { color: var(--text-main); }
     }
   }
 
@@ -264,19 +267,11 @@ const Container = styled.div`
     background-color: #0b141a;
     background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
 
-    &::-webkit-scrollbar {
-      width: 0.2rem;
-      &-thumb {
-        background-color: #ffffff39;
-        width: 0.1rem;
-        border-radius: 1rem;
-      }
-    }
+    &::-webkit-scrollbar { width: 0.2rem; &-thumb { background-color: #ffffff39; width: 0.1rem; border-radius: 1rem; }}
 
     .message {
       display: flex;
       align-items: center;
-
       .content {
         max-width: 40%;
         overflow-wrap: break-word;
@@ -287,6 +282,42 @@ const Container = styled.div`
         box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
         user-select: none; 
         -webkit-user-select: none;
+
+        /* --- STYLES FOR REPLY BLOCKS --- */
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .reply-block {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid var(--primary-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            
+            .reply-name {
+                color: var(--primary-color);
+                font-weight: bold;
+                font-size: 0.75rem;
+                margin-bottom: 2px;
+            }
+            .reply-text {
+                color: #b9c3c9;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 250px;
+            }
+        }
+        
+        .actual-text {
+            margin-top: 2px;
+        }
       }
     }
 
@@ -296,6 +327,14 @@ const Container = styled.div`
         background-color: var(--primary-color);
         color: white;
         border-bottom-right-radius: 0;
+        
+        /* Adjust reply block colors inside Sent (Green) bubble */
+        .reply-block {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid #ffffff;
+            .reply-name { color: #ffffff; }
+            .reply-text { color: #e9edef; }
+        }
       }
     }
 
