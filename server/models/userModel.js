@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     max: 50,
   },
-  phoneNumber: {         // <--- ADD THIS
+  phoneNumber: {
     type: String,
     default: "",
     max: 20,
@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
   avatarImage: {
     type: String,
     default: "",
+  },
+  // 👇 NEW FIELD FOR BLOCKING
+  blockedUsers: {
+    type: Array,
+    default: [],
   },
 });
 

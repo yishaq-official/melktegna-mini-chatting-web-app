@@ -1,31 +1,21 @@
 const User = require("../models/userModel");
-const bcrypt = require("bcryptjs"); // Used to encrypt passwords
+const bcrypt = require("bcryptjs");
 
 module.exports.register = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
-
-    // 1. Check if username already exists
     const usernameCheck = await User.findOne({ username });
     if (usernameCheck)
       return res.json({ msg: "Username already used", status: false });
-
-    // 2. Check if email already exists
     const emailCheck = await User.findOne({ email });
     if (emailCheck)
       return res.json({ msg: "Email already used", status: false });
-
-    // 3. Encrypt the password (Security First!)
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 4. Create the user
     const user = await User.create({
       email,
       username,
       password: hashedPassword,
     });
-
-    // 5. Remove password from the response for safety
     delete user.password;
     return res.json({ status: true, user });
   } catch (ex) {
@@ -36,18 +26,12 @@ module.exports.register = async (req, res, next) => {
 module.exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-
-    // 1. Find user by username
     const user = await User.findOne({ username });
     if (!user)
       return res.json({ msg: "Incorrect Username or Password", status: false });
-
-    // 2. Compare the password sent with the encrypted password in DB
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid)
       return res.json({ msg: "Incorrect Username or Password", status: false });
-
-    // 3. Remove password from response and return user
     delete user.password;
     return res.json({ status: true, user });
   } catch (ex) {
@@ -59,7 +43,6 @@ module.exports.setAvatar = async (req, res, next) => {
   try {
     const userId = req.params.id;
     const avatarImage = req.body.image;
-    
     const userData = await User.findByIdAndUpdate(
       userId,
       {
@@ -68,7 +51,6 @@ module.exports.setAvatar = async (req, res, next) => {
       },
       { new: true }
     );
-    
     return res.json({
       isSet: userData.isAvatarImageSet,
       image: userData.avatarImage,
@@ -80,7 +62,6 @@ module.exports.setAvatar = async (req, res, next) => {
 
 module.exports.getAllUsers = async (req, res, next) => {
   try {
-    // Select all users where _id is NOT equal ($ne) to the requester's id
     const users = await User.find({ _id: { $ne: req.params.id } }).select([
       "email",
       "username",
@@ -88,6 +69,40 @@ module.exports.getAllUsers = async (req, res, next) => {
       "_id",
     ]);
     return res.json(users);
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+// 👇 NEW: BLOCK USER
+module.exports.blockUser = async (req, res, next) => {
+  try {
+    const id = req.params.id; // Me
+    const { blockId } = req.body; // Them
+    
+    const user = await User.findById(id);
+    if (!user.blockedUsers.includes(blockId)) {
+        await user.updateOne({ $push: { blockedUsers: blockId } });
+        return res.json({ status: true, msg: "User blocked" });
+    }
+    return res.json({ status: false, msg: "Already blocked" });
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+// 👇 NEW: UNBLOCK USER
+module.exports.unblockUser = async (req, res, next) => {
+  try {
+    const id = req.params.id; 
+    const { blockId } = req.body; 
+    
+    const user = await User.findById(id);
+    if (user.blockedUsers.includes(blockId)) {
+        await user.updateOne({ $pull: { blockedUsers: blockId } });
+        return res.json({ status: true, msg: "User unblocked" });
+    }
+    return res.json({ status: false, msg: "User was not blocked" });
   } catch (ex) {
     next(ex);
   }

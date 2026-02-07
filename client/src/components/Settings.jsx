@@ -4,14 +4,14 @@ import { IoMdClose, IoMdMoon, IoMdSunny } from "react-icons/io";
 import { FaPhoneAlt } from "react-icons/fa";
 
 export default function Settings({ isOpen, toggleSettings, currentUser }) {
-  // Fix: Initialize state from localStorage directly (Lazy Initialization)
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("melktegna-theme") || "dark";
   });
   
   const [phone, setPhone] = useState(currentUser.phoneNumber || "");
+  const [blockedCount, setBlockedCount] = useState(0);
 
-  // Fix: Only use useEffect to apply the class when theme CHANGES
+  // Apply Theme
   useEffect(() => {
     if (theme === "light") {
       document.body.classList.add("light-theme");
@@ -19,6 +19,18 @@ export default function Settings({ isOpen, toggleSettings, currentUser }) {
       document.body.classList.remove("light-theme");
     }
   }, [theme]);
+
+  // Sync Blocked Count every time Settings is opened
+  useEffect(() => {
+    if (isOpen) {
+        const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
+        if (localUser && localUser.blockedUsers) {
+            setBlockedCount(localUser.blockedUsers.length);
+        } else {
+            setBlockedCount(0);
+        }
+    }
+  }, [isOpen]);
 
   const handleThemeChange = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -69,7 +81,16 @@ export default function Settings({ isOpen, toggleSettings, currentUser }) {
 
         <div className="section">
             <label>Blocked Users</label>
-            <div className="placeholder-box">No blocked users</div>
+            <div className="placeholder-box">
+                {blockedCount > 0 
+                    ? `You have ${blockedCount} blocked user(s).` 
+                    : "No blocked users"}
+            </div>
+            {blockedCount > 0 && (
+                <small style={{color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'center'}}>
+                    Go to a chat to unblock a user.
+                </small>
+            )}
         </div>
       </div>
     </Drawer>
@@ -171,7 +192,7 @@ const Drawer = styled.div`
             padding: 1rem;
             background-color: var(--input-bg);
             color: var(--text-secondary);
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             border-radius: 0.5rem;
             text-align: center;
         }
