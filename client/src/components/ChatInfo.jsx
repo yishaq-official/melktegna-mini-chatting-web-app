@@ -1,56 +1,55 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 import { blockUserRoute, unblockUserRoute } from "../utils/APIRoutes";
 
 export default function ChatInfo({ currentChat, currentUser, isOpen, toggleInfo }) {
-  const [isBlocked, setIsBlocked] = useState(false);
+  // Force update helper
+  const [, setForceUpdate] = useState(0);
 
-  // 1. Sync Block Status when Chat Opens
-  useEffect(() => {
-    if (currentUser && currentChat) {
-      // We read directly from localStorage to ensure we have the latest data
-      // (Parent state might be slightly stale if we just blocked someone else)
-      const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
-      const blockedList = localUser?.blockedUsers || [];
-      
-      if (blockedList.includes(currentChat._id)) {
-        setIsBlocked(true);
-      } else {
-        setIsBlocked(false);
-      }
-    }
-  }, [currentChat, currentUser, isOpen]); // Run when chat changes or drawer opens
+  // 1. Calculate Block Status
+  const isBlocked = (() => {
+    if (!currentChat) return false;
+    const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
+    const blockedList = localUser?.blockedUsers || [];
+    return blockedList.includes(currentChat._id);
+  })();
 
-  // 2. Handle Block/Unblock
   const handleBlockAction = async () => {
+    // --- DEBUG LOGS ---
+    console.log("🖱️ Block Button Clicked");
+    console.log("My ID:", currentUser._id);
+    console.log("Target ID:", currentChat._id);
+    console.log("Action:", isBlocked ? "Unblocking..." : "Blocking...");
+
     try {
       if (isBlocked) {
-        // UNBLOCK LOGIC
+        // UNBLOCK
         const { data } = await axios.post(`${unblockUserRoute}/${currentUser._id}`, {
           blockId: currentChat._id,
         });
+        console.log("✅ Server Response (Unblock):", data);
+
         if (data.status) {
-          setIsBlocked(false);
           updateLocalUser(currentChat._id, "unblock");
         }
       } else {
-        // BLOCK LOGIC
+        // BLOCK
         const { data } = await axios.post(`${blockUserRoute}/${currentUser._id}`, {
           blockId: currentChat._id,
         });
+        console.log("✅ Server Response (Block):", data);
+
         if (data.status) {
-          setIsBlocked(true);
           updateLocalUser(currentChat._id, "block");
         }
       }
     } catch (error) {
-      console.error("Error updating block status:", error);
+      console.error("❌ Error updating block status:", error);
     }
   };
 
-  // 3. Helper to update localStorage immediately
   const updateLocalUser = (id, action) => {
     let user = JSON.parse(localStorage.getItem("melktegna-user"));
     if (!user.blockedUsers) user.blockedUsers = [];
@@ -61,6 +60,9 @@ export default function ChatInfo({ currentChat, currentUser, isOpen, toggleInfo 
       user.blockedUsers = user.blockedUsers.filter((userId) => userId !== id);
     }
     localStorage.setItem("melktegna-user", JSON.stringify(user));
+    
+    // Force re-render
+    setForceUpdate((prev) => prev + 1);
   };
 
   if (!currentChat) return null;
@@ -85,7 +87,6 @@ export default function ChatInfo({ currentChat, currentUser, isOpen, toggleInfo 
         </div>
         
         <div className="actions">
-           {/* Dynamic Button */}
            <button 
                 className={isBlocked ? "primary-btn" : "danger-btn"} 
                 onClick={handleBlockAction}
@@ -100,6 +101,7 @@ export default function ChatInfo({ currentChat, currentUser, isOpen, toggleInfo 
   );
 }
 
+// ... (Keep your existing styled components below)
 const Drawer = styled.div`
   position: absolute;
   top: 0;

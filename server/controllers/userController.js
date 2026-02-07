@@ -77,10 +77,16 @@ module.exports.getAllUsers = async (req, res, next) => {
 // 👇 NEW: BLOCK USER
 module.exports.blockUser = async (req, res, next) => {
   try {
-    const id = req.params.id; // Me
-    const { blockId } = req.body; // Them
+    const id = req.params.id;
+    const { blockId } = req.body; // <--- Make sure this is destructured correctly
     
     const user = await User.findById(id);
+
+    // If 'blockedUsers' is undefined in DB (because it's a new field), this might crash
+    if (!user.blockedUsers) { 
+        user.blockedUsers = []; 
+    }
+
     if (!user.blockedUsers.includes(blockId)) {
         await user.updateOne({ $push: { blockedUsers: blockId } });
         return res.json({ status: true, msg: "User blocked" });

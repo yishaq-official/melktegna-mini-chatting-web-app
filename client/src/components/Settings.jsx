@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
 import { IoMdClose, IoMdMoon, IoMdSunny } from "react-icons/io";
 import { FaPhoneAlt } from "react-icons/fa";
 
 export default function Settings({ isOpen, toggleSettings, currentUser }) {
+  // Lazy init for theme to avoid re-reading localStorage on every render
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("melktegna-theme") || "dark";
   });
   
   const [phone, setPhone] = useState(currentUser.phoneNumber || "");
-  const [blockedCount, setBlockedCount] = useState(0);
 
-  // Apply Theme
+  // Fix: Use useMemo instead of useState+useEffect.
+  // This calculates the count instantly when 'isOpen' changes, 
+  // preventing the "Cascading Render" error.
+  const blockedCount = useMemo(() => {
+    if (!isOpen) return 0;
+    const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
+    return (localUser && localUser.blockedUsers) ? localUser.blockedUsers.length : 0;
+  }, [isOpen]);
+
+  // Apply Theme Effect
   useEffect(() => {
     if (theme === "light") {
       document.body.classList.add("light-theme");
@@ -19,18 +28,6 @@ export default function Settings({ isOpen, toggleSettings, currentUser }) {
       document.body.classList.remove("light-theme");
     }
   }, [theme]);
-
-  // Sync Blocked Count every time Settings is opened
-  useEffect(() => {
-    if (isOpen) {
-        const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
-        if (localUser && localUser.blockedUsers) {
-            setBlockedCount(localUser.blockedUsers.length);
-        } else {
-            setBlockedCount(0);
-        }
-    }
-  }, [isOpen]);
 
   const handleThemeChange = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -192,7 +189,7 @@ const Drawer = styled.div`
             padding: 1rem;
             background-color: var(--input-bg);
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             border-radius: 0.5rem;
             text-align: center;
         }
