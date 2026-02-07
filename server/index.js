@@ -14,7 +14,8 @@ app.use("/api/auth", userRoutes);
 app.use("/api/messages", messageRoutes);
 
 // Connect to Database
-mongoose.connect("mongodb://admin:password123@localhost:27017", {
+//mongodb://admin:password123@localhost:27017
+mongoose.connect("mongodb://localhost:27017/", {
   authSource: "admin"
 })
 .then(() => {
