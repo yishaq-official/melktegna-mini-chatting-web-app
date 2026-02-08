@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Messages = require("../models/messageModel"); // <--- Import Message Model
 const bcrypt = require("bcryptjs");
 
 module.exports.register = async (req, res, next) => {
@@ -60,33 +61,45 @@ module.exports.setAvatar = async (req, res, next) => {
   }
 };
 
+// 👇 UPDATED: Get Users + Unread Counts
 module.exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find({ _id: { $ne: req.params.id } }).select([
+    const currentUserId = req.params.id;
+    
+    // 1. Find all other users
+    const users = await User.find({ _id: { $ne: currentUserId } }).select([
       "email",
       "username",
       "avatarImage",
       "_id",
     ]);
-    return res.json(users);
+
+    // 2. Calculate unread messages for each user
+    // We use Promise.all because we are running a DB query inside a map loop
+    const usersWithCounts = await Promise.all(
+      users.map(async (user) => {
+        const count = await Messages.countDocuments({
+          sender: user._id, // Sent BY them
+          users: { $all: [currentUserId, user._id] }, // In our chat
+          read: false, // And NOT read
+        });
+        
+        return { ...user.toObject(), unreadCount: count };
+      })
+    );
+
+    return res.json(usersWithCounts);
   } catch (ex) {
     next(ex);
   }
 };
 
-// 👇 NEW: BLOCK USER
 module.exports.blockUser = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const { blockId } = req.body; // <--- Make sure this is destructured correctly
-    
+    const { blockId } = req.body;
     const user = await User.findById(id);
-
-    // If 'blockedUsers' is undefined in DB (because it's a new field), this might crash
-    if (!user.blockedUsers) { 
-        user.blockedUsers = []; 
-    }
-
+    if (!user.blockedUsers) { user.blockedUsers = []; }
     if (!user.blockedUsers.includes(blockId)) {
         await user.updateOne({ $push: { blockedUsers: blockId } });
         return res.json({ status: true, msg: "User blocked" });
@@ -97,12 +110,10 @@ module.exports.blockUser = async (req, res, next) => {
   }
 };
 
-// 👇 NEW: UNBLOCK USER
 module.exports.unblockUser = async (req, res, next) => {
   try {
     const id = req.params.id; 
     const { blockId } = req.body; 
-    
     const user = await User.findById(id);
     if (user.blockedUsers.includes(blockId)) {
         await user.updateOne({ $pull: { blockedUsers: blockId } });

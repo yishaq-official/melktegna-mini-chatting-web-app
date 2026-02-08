@@ -1,23 +1,17 @@
 const Messages = require("../models/messageModel");
-const User = require("../models/userModel"); // <--- Import User Model
+const User = require("../models/userModel");
 
-// 1. Add Message to DB
 module.exports.addMessage = async (req, res, next) => {
   try {
     const { from, to, message } = req.body;
 
-    // --- BLOCKING LOGIC START ---
-    // Find the recipient (the person receiving the message)
     const recipient = await User.findById(to);
-
-    // Check if the recipient has blocked the sender
     if (recipient && recipient.blockedUsers.includes(from)) {
       return res.json({ 
         msg: "Message not sent. You are blocked by this user.", 
         status: false 
       });
     }
-    // --- BLOCKING LOGIC END ---
 
     const data = await Messages.create({
       message: { text: message },
@@ -32,11 +26,22 @@ module.exports.addMessage = async (req, res, next) => {
   }
 };
 
-// 2. Get Messages for a specific chat
+// 👇 UPDATED: Get Messages & Mark as Read
 module.exports.getMessages = async (req, res, next) => {
   try {
     const { from, to } = req.body;
 
+    // 1. Mark messages sent BY 'to' (them) as READ because 'from' (me) is fetching them
+    await Messages.updateMany(
+      {
+        users: { $all: [from, to] },
+        sender: to, 
+        read: false
+      },
+      { $set: { read: true } }
+    );
+
+    // 2. Fetch the messages
     const messages = await Messages.find({
       users: {
         $all: [from, to],

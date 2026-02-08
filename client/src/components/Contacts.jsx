@@ -37,6 +37,12 @@ export default function Contacts({ contacts, currentUser, changeChat, onSettings
                   <div className="username">
                     <h3>{contact.username}</h3>
                   </div>
+                  
+                  {/* 👇 NEW: Unread Count Bubble */}
+                  {contact.unreadCount > 0 && (
+                    <div className="badge">{contact.unreadCount}</div>
+                  )}
+                  
                 </div>
               );
             })}
@@ -110,6 +116,7 @@ const Container = styled.div`
       align-items: center;
       transition: 0.2s ease-in-out;
       border-bottom: 1px solid rgba(134, 150, 160, 0.15);
+      position: relative; /* Needed for positioning badge if using absolute, but flex works too */
       
       .avatar img {
         height: 2.5rem;
@@ -121,6 +128,19 @@ const Container = styled.div`
         font-weight: 400;
       }
       
+      /* 👇 NEW: Badge Styles */
+      .badge {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        min-width: 1.2rem;
+        text-align: center;
+        margin-left: auto; /* Pushes badge to the right */
+      }
+      
       &:hover {
         background-color: rgba(255, 255, 255, 0.05);
       }
@@ -129,6 +149,11 @@ const Container = styled.div`
     .selected {
       background-color: var(--input-bg);
       border-left: 4px solid var(--primary-color);
+      
+      /* Hide badge if selected (optional, depends on preference) */
+      .badge {
+        display: none;
+      }
     }
   }
 
