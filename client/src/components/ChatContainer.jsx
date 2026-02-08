@@ -34,24 +34,16 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     fetchChat();
   }, [currentChat, currentUser]);
 
-  // 2. Handle Sending Messages (With Reply Cleaning Logic)
+  // 2. Handle Sending Messages
   const handleSendMsg = async (msg) => {
     let finalMsg = msg;
     
     if (replyingTo) {
-        // 1. CLEAN THE TEXT
-        // Remove old headers to prevent infinite nesting loops
         let textToQuote = replyingTo.message;
-        
-        // Regex matches the "> Replying to X:\n"Quote"\n\n" pattern
         const replyHeaderRegex = /^> Replying to .*?:\n"[\s\S]*?"\n\n/;
-        
         if (replyHeaderRegex.test(textToQuote)) {
-            // Strip the old header, keep only the original user text
             textToQuote = textToQuote.replace(replyHeaderRegex, "");
         }
-
-        // 2. CONSTRUCT NEW MESSAGE
         finalMsg = `> Replying to ${replyingTo.senderName}:\n"${textToQuote}"\n\n${msg}`;
     }
 
@@ -70,8 +62,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     const msgs = [...messages];
     msgs.push({ fromSelf: true, message: finalMsg });
     setMessages(msgs);
-    
-    // Clear reply state after sending
     setReplyingTo(null);
   };
 
@@ -95,7 +85,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   }, [messages]);
 
   // --- HANDLERS ---
-
   const handleContextMenu = (e, message) => {
     e.preventDefault();
     setContextMenuCordinates({ x: e.pageX, y: e.pageY });
@@ -118,8 +107,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
       timerRef.current = null;
     }
   };
-
-  // --- MENU ACTIONS ---
 
   const deleteMessage = async () => {
     const newMessages = messages.filter((msg) => msg !== selectedMessage);
@@ -146,9 +133,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     setIsContextMenuVisible(false);
   };
 
-  // --- RENDER HELPER FOR MESSAGES (TELEGRAM STYLE) ---
   const renderMessageContent = (msgText) => {
-    // Detect reply format: > Replying to NAME:\n"TEXT"\n\nACTUAL_MESSAGE
     const replyRegex = /^> Replying to (.*?):\n"([\s\S]*?)"\n\n([\s\S]*)/;
     const match = msgText.match(replyRegex);
 
@@ -164,8 +149,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         </div>
       );
     }
-    
-    // Normal message
     return <p>{msgText}</p>;
   };
 
@@ -199,7 +182,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
                 onTouchEnd={handleTouchEnd}
               >
                 <div className="content">
-                  {/* Use Helper Function to Render Content */}
                   {renderMessageContent(message.message)}
                 </div>
               </div>
@@ -214,8 +196,10 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         cancelReply={() => setReplyingTo(null)}
       />
       
+      {/* 👇 THIS WAS THE MISSING PIECE: Added 'currentUser' prop */}
       <ChatInfo 
         currentChat={currentChat} 
+        currentUser={currentUser}   
         isOpen={isInfoOpen} 
         toggleInfo={() => setIsInfoOpen(false)} 
       />
@@ -281,14 +265,8 @@ const Container = styled.div`
         color: #d1d7db;
         box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
         user-select: none; 
-        -webkit-user-select: none;
 
-        /* --- STYLES FOR REPLY BLOCKS --- */
-        .message-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
+        .message-wrapper { display: flex; flex-direction: column; gap: 5px; }
 
         .reply-block {
             background-color: rgba(0, 0, 0, 0.2);
@@ -299,25 +277,10 @@ const Container = styled.div`
             flex-direction: column;
             cursor: pointer;
             
-            .reply-name {
-                color: var(--primary-color);
-                font-weight: bold;
-                font-size: 0.75rem;
-                margin-bottom: 2px;
-            }
-            .reply-text {
-                color: #b9c3c9;
-                font-size: 0.85rem;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 250px;
-            }
+            .reply-name { color: var(--primary-color); font-weight: bold; font-size: 0.75rem; margin-bottom: 2px; }
+            .reply-text { color: #b9c3c9; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
         }
-        
-        .actual-text {
-            margin-top: 2px;
-        }
+        .actual-text { margin-top: 2px; }
       }
     }
 
@@ -328,7 +291,6 @@ const Container = styled.div`
         color: white;
         border-bottom-right-radius: 0;
         
-        /* Adjust reply block colors inside Sent (Green) bubble */
         .reply-block {
             background-color: rgba(0, 0, 0, 0.2);
             border-left: 3px solid #ffffff;
