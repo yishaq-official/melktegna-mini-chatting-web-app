@@ -38,7 +38,7 @@ export default function Chat() {
     }
   }, [currentUser]);
 
-  // 3. Fetch Contacts (and Unread Counts)
+  // 3. Fetch Contacts
   useEffect(() => {
     const getContacts = async () => {
       if (currentUser) {
@@ -53,23 +53,18 @@ export default function Chat() {
     getContacts();
   }, [currentUser, navigate]);
 
-  // 4. LISTEN FOR INCOMING MESSAGES TO UPDATE BADGE
+  // 4. LISTEN FOR INCOMING MESSAGES (FIXED DUPLICATION BUG)
   useEffect(() => {
     if (socket.current) {
-      socket.current.on("msg-recieve", (msg) => {
-        // If the message is NOT from the person we are currently talking to...
-        // We should increase their unread count.
-        if (!currentChat || currentChat._id !== msg.from) { // msg.from should be the sender ID
-           // Note: You might need to adjust based on exactly what your socket sends.
-           // Assuming your socket sends the full message object or at least { from: senderId }
-           
-           // We need to find which contact sent this
+      // Define the handler function
+      const handleMsgRecieve = (data) => {
+        // data = { message: "...", from: "sender_id" }
+        
+        // Only increment count if we are NOT currently chatting with the sender
+        if (!currentChat || currentChat._id !== data.from) { 
            setContacts((prevContacts) => 
              prevContacts.map((contact) => {
-               // If this contact sent the message, increment unread
-               // We check if contact._id matches the sender
-               // (You might need to debug log 'msg' to ensure it has 'from' or 'sender')
-               if (contact._id === msg || contact._id === msg.from) { 
+               if (contact._id === data.from) { 
                  return { 
                    ...contact, 
                    unreadCount: (contact.unreadCount || 0) + 1 
@@ -79,14 +74,22 @@ export default function Chat() {
              })
            );
         }
-      });
+      };
+
+      // Add Listener
+      socket.current.on("msg-recieve", handleMsgRecieve);
+
+      // 👇 CLEANUP FUNCTION: Remove listener when dependencies change
+      return () => {
+        socket.current.off("msg-recieve", handleMsgRecieve);
+      };
     }
-  }, [currentChat]);
+  }, [currentChat]); // Re-run whenever currentChat changes to update the "if" check logic
 
   // 5. Clear Unread Count when Chat Opens
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
-    // Reset the unread count for this user in the UI instantly
+    // Reset the unread count locally instantly
     setContacts((prev) => 
       prev.map((c) => 
         c._id === chat._id ? { ...c, unreadCount: 0 } : c
