@@ -53,7 +53,10 @@ io.on("connection", (socket) => {
     const sendUserSocket = onlineUsers.get(data.to); // Get recipient's socket ID
     if (sendUserSocket) {
       // Emit to that specific user only
-      socket.to(sendUserSocket).emit("msg-recieve", data.msg);
+      socket.to(sendUserSocket).emit("msg-recieve", {
+        message: data.msg,
+        from: data.from // <--- CRITICAL: We need to know who sent it!
+      });
     }
   });
 });

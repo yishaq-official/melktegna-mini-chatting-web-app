@@ -1,23 +1,24 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { io } from "socket.io-client"; // <-- Import Socket Client
+import { io } from "socket.io-client";
 import styled from "styled-components";
 import { allUsersRoute, host } from "../utils/APIRoutes";
+import ChatContainer from "../components/ChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
-import ChatContainer from "../components/ChatContainer";
 import Settings from "../components/Settings";
 
 export default function Chat() {
   const navigate = useNavigate();
-  const socket = useRef(); // <-- Create a Ref for the socket
+  const socket = useRef();
+  
   const [contacts, setContacts] = useState([]);
-  const [currentUser, setCurrentUser] = useState(undefined);
   const [currentChat, setCurrentChat] = useState(undefined);
+  const [currentUser, setCurrentUser] = useState(undefined);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // 1. Check User Session
+  // 1. Check Session
   useEffect(() => {
     const checkUser = async () => {
       if (!localStorage.getItem("melktegna-user")) {
@@ -29,15 +30,15 @@ export default function Chat() {
     checkUser();
   }, [navigate]);
 
-  // 2. Initialize Socket Connection
+  // 2. Initialize Socket
   useEffect(() => {
     if (currentUser) {
-      socket.current = io(host); // Connect to Backend
-      socket.current.emit("add-user", currentUser._id); // Tell server "I am here"
+      socket.current = io(host);
+      socket.current.emit("add-user", currentUser._id);
     }
   }, [currentUser]);
 
-  // 3. Fetch Contacts
+  // 3. Fetch Contacts (and Unread Counts)
   useEffect(() => {
     const getContacts = async () => {
       if (currentUser) {
@@ -52,8 +53,45 @@ export default function Chat() {
     getContacts();
   }, [currentUser, navigate]);
 
+  // 4. LISTEN FOR INCOMING MESSAGES TO UPDATE BADGE
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.on("msg-recieve", (msg) => {
+        // If the message is NOT from the person we are currently talking to...
+        // We should increase their unread count.
+        if (!currentChat || currentChat._id !== msg.from) { // msg.from should be the sender ID
+           // Note: You might need to adjust based on exactly what your socket sends.
+           // Assuming your socket sends the full message object or at least { from: senderId }
+           
+           // We need to find which contact sent this
+           setContacts((prevContacts) => 
+             prevContacts.map((contact) => {
+               // If this contact sent the message, increment unread
+               // We check if contact._id matches the sender
+               // (You might need to debug log 'msg' to ensure it has 'from' or 'sender')
+               if (contact._id === msg || contact._id === msg.from) { 
+                 return { 
+                   ...contact, 
+                   unreadCount: (contact.unreadCount || 0) + 1 
+                 };
+               }
+               return contact;
+             })
+           );
+        }
+      });
+    }
+  }, [currentChat]);
+
+  // 5. Clear Unread Count when Chat Opens
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
+    // Reset the unread count for this user in the UI instantly
+    setContacts((prev) => 
+      prev.map((c) => 
+        c._id === chat._id ? { ...c, unreadCount: 0 } : c
+      )
+    );
   };
 
   return (
@@ -65,17 +103,17 @@ export default function Chat() {
           changeChat={handleChatChange} 
           onSettingsClick={() => setIsSettingsOpen(true)}
         />
+        
         {currentChat === undefined ? (
           <Welcome currentUser={currentUser} />
         ) : (
-          /* Pass the Socket to the ChatContainer so it can send/receive events */
           <ChatContainer 
             currentChat={currentChat} 
             currentUser={currentUser} 
             socket={socket} 
           />
         )}
-        {/* Render Settings Drawer */}
+
         {currentUser && (
           <Settings 
             isOpen={isSettingsOpen} 

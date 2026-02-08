@@ -45,7 +45,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     fetchChat();
   }, [currentChat, currentUser]);
 
-  // 2. Handle Sending Messages (UPDATED FOR BLOCKING)
+  // 2. Handle Sending Messages
   const handleSendMsg = async (msg) => {
     let finalMsg = msg;
     
@@ -53,7 +53,9 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     if (replyingTo) {
         let textToQuote = replyingTo.message;
         const replyHeaderRegex = /^> Replying to .*?:\n"[\s\S]*?"\n\n/;
-        if (replyHeaderRegex.test(textToQuote)) {
+        
+        // Safety check: ensure textToQuote is a string
+        if (typeof textToQuote === 'string' && replyHeaderRegex.test(textToQuote)) {
             textToQuote = textToQuote.replace(replyHeaderRegex, "");
         }
         finalMsg = `> Replying to ${replyingTo.senderName}:\n"${textToQuote}"\n\n${msg}`;
@@ -69,8 +71,8 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
 
       // B. Check if Server Rejected it (Blocked)
       if (data.status === false) {
-        toast.error(data.msg, toastOptions); // Show "You are blocked"
-        return; // STOP HERE! Don't send via socket, don't show in UI.
+        toast.error(data.msg, toastOptions); 
+        return; 
       }
 
       // C. If Success: Emit to Socket
@@ -92,13 +94,22 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     }
   };
 
-  // 3. Listen for Incoming Messages
+  // 3. Listen for Incoming Messages (FIXED CRASH HERE)
   useEffect(() => {
     const socketNode = socket.current;
     if (socketNode) {
-      const handleMessage = (msg) => {
-        setMessages((prev) => [...prev, { fromSelf: false, message: msg }]);
+      const handleMessage = (data) => {
+        // Extract string text safely. 
+        // If data is { message: "hi", from: "..." }, use data.message.
+        let msgText = data;
+        
+        if (data && typeof data === 'object' && data.message) {
+            msgText = data.message;
+        }
+
+        setMessages((prev) => [...prev, { fromSelf: false, message: msgText }]);
       };
+      
       socketNode.on("msg-recieve", handleMessage);
       return () => {
         socketNode.off("msg-recieve", handleMessage);
@@ -160,7 +171,13 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     setIsContextMenuVisible(false);
   };
 
+  // --- RENDER HELPER (FIXED CRASH HERE) ---
   const renderMessageContent = (msgText) => {
+    // 1. Safety Check: Ensure msgText is a string before matching
+    if (typeof msgText !== 'string') {
+        return <p>{String(msgText)}</p>; 
+    }
+
     const replyRegex = /^> Replying to (.*?):\n"([\s\S]*?)"\n\n([\s\S]*)/;
     const match = msgText.match(replyRegex);
 
@@ -209,6 +226,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
                 onTouchEnd={handleTouchEnd}
               >
                 <div className="content">
+                  {/* Safely Render Content */}
                   {renderMessageContent(message.message)}
                 </div>
               </div>
@@ -225,7 +243,7 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
       
       <ChatInfo 
         currentChat={currentChat} 
-        currentUser={currentUser}
+        currentUser={currentUser}   
         isOpen={isInfoOpen} 
         toggleInfo={() => setIsInfoOpen(false)} 
       />
@@ -239,7 +257,6 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         />
       )}
       
-      {/* Toast Container for Block Alerts */}
       <ToastContainer />
     </Container>
   );
