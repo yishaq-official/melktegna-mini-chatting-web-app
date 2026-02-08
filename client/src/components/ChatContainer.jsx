@@ -5,6 +5,8 @@ import ChatInfo from "./ChatInfo";
 import ContextMenu from "./ContextMenu";
 import axios from "axios";
 import { sendMessageRoute, recieveMessageRoute, deleteMessageRoute } from "../utils/APIRoutes";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [messages, setMessages] = useState([]);
@@ -20,6 +22,15 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   // --- REPLY STATE ---
   const [replyingTo, setReplyingTo] = useState(null);
 
+  // Toast Options
+  const toastOptions = {
+    position: "bottom-right",
+    autoClose: 5000,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "dark",
+  };
+
   // 1. Fetch Chat History
   useEffect(() => {
     const fetchChat = async () => {
@@ -34,10 +45,11 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
     fetchChat();
   }, [currentChat, currentUser]);
 
-  // 2. Handle Sending Messages
+  // 2. Handle Sending Messages (UPDATED FOR BLOCKING)
   const handleSendMsg = async (msg) => {
     let finalMsg = msg;
     
+    // Formatting Reply
     if (replyingTo) {
         let textToQuote = replyingTo.message;
         const replyHeaderRegex = /^> Replying to .*?:\n"[\s\S]*?"\n\n/;
@@ -47,22 +59,37 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         finalMsg = `> Replying to ${replyingTo.senderName}:\n"${textToQuote}"\n\n${msg}`;
     }
 
-    await axios.post(sendMessageRoute, {
-      from: currentUser._id,
-      to: currentChat._id,
-      message: finalMsg,
-    });
+    try {
+      // A. Send to Backend FIRST
+      const { data } = await axios.post(sendMessageRoute, {
+        from: currentUser._id,
+        to: currentChat._id,
+        message: finalMsg,
+      });
 
-    socket.current.emit("send-msg", {
-      to: currentChat._id,
-      from: currentUser._id,
-      msg: finalMsg,
-    });
+      // B. Check if Server Rejected it (Blocked)
+      if (data.status === false) {
+        toast.error(data.msg, toastOptions); // Show "You are blocked"
+        return; // STOP HERE! Don't send via socket, don't show in UI.
+      }
 
-    const msgs = [...messages];
-    msgs.push({ fromSelf: true, message: finalMsg });
-    setMessages(msgs);
-    setReplyingTo(null);
+      // C. If Success: Emit to Socket
+      socket.current.emit("send-msg", {
+        to: currentChat._id,
+        from: currentUser._id,
+        msg: finalMsg,
+      });
+
+      // D. Update UI
+      const msgs = [...messages];
+      msgs.push({ fromSelf: true, message: finalMsg });
+      setMessages(msgs);
+      setReplyingTo(null);
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error sending message", toastOptions);
+    }
   };
 
   // 3. Listen for Incoming Messages
@@ -196,10 +223,9 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
         cancelReply={() => setReplyingTo(null)}
       />
       
-      {/* 👇 THIS WAS THE MISSING PIECE: Added 'currentUser' prop */}
       <ChatInfo 
         currentChat={currentChat} 
-        currentUser={currentUser}   
+        currentUser={currentUser}
         isOpen={isInfoOpen} 
         toggleInfo={() => setIsInfoOpen(false)} 
       />
@@ -212,6 +238,9 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
           setContextMenu={setIsContextMenuVisible}
         />
       )}
+      
+      {/* Toast Container for Block Alerts */}
+      <ToastContainer />
     </Container>
   );
 }

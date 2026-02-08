@@ -1,17 +1,32 @@
 const Messages = require("../models/messageModel");
+const User = require("../models/userModel"); // <--- Import User Model
 
 // 1. Add Message to DB
 module.exports.addMessage = async (req, res, next) => {
   try {
     const { from, to, message } = req.body;
+
+    // --- BLOCKING LOGIC START ---
+    // Find the recipient (the person receiving the message)
+    const recipient = await User.findById(to);
+
+    // Check if the recipient has blocked the sender
+    if (recipient && recipient.blockedUsers.includes(from)) {
+      return res.json({ 
+        msg: "Message not sent. You are blocked by this user.", 
+        status: false 
+      });
+    }
+    // --- BLOCKING LOGIC END ---
+
     const data = await Messages.create({
       message: { text: message },
       users: [from, to],
       sender: from,
     });
 
-    if (data) return res.json({ msg: "Message added successfully." });
-    else return res.json({ msg: "Failed to add message to database" });
+    if (data) return res.json({ msg: "Message added successfully.", status: true });
+    else return res.json({ msg: "Failed to add message to database", status: false });
   } catch (ex) {
     next(ex);
   }
@@ -22,18 +37,16 @@ module.exports.getMessages = async (req, res, next) => {
   try {
     const { from, to } = req.body;
 
-    // Find messages where users array contains both 'from' and 'to'
     const messages = await Messages.find({
       users: {
         $all: [from, to],
       },
-    }).sort({ updatedAt: 1 }); // Sort by time (oldest first)
+    }).sort({ updatedAt: 1 });
 
-    // Format for Frontend
     const projectedMessages = messages.map((msg) => {
       return {
         _id: msg._id,
-        fromSelf: msg.sender.toString() === from, // Boolean: Did I send this?
+        fromSelf: msg.sender.toString() === from,
         message: msg.message.text,
       };
     });
@@ -46,7 +59,6 @@ module.exports.getMessages = async (req, res, next) => {
 module.exports.deleteMessage = async (req, res, next) => {
   try {
     const { msgId } = req.body;
-    // Security: In a real app, check if req.user._id === sender
     await Messages.deleteOne({ _id: msgId });
     return res.json({ status: true, msg: "Message deleted" });
   } catch (ex) {

@@ -34,7 +34,6 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply }) {
       {replyingTo && (
         <div className="reply-preview">
           <div className="reply-content">
-            {/* Display the Name here */}
             <span className="reply-title">Replying to {replyingTo.senderName}</span>
             <p className="reply-text">{replyingTo.message.substring(0, 50)}...</p>
           </div>
@@ -75,14 +74,14 @@ const Container = styled.div`
   background-color: var(--panel-bg);
   padding: 0 2rem;
   padding-bottom: 0.3rem;
-  position: relative; /* Needed for absolute positioning of reply box */
+  position: relative;
 
   .reply-preview {
     position: absolute;
-    bottom: 100%; /* Sits exactly on top of the input */
+    bottom: 100%;
     left: 0;
     width: 100%;
-    background-color: #1f2c34; /* Slightly lighter than panel */
+    background-color: #1f2c34;
     padding: 0.5rem 2rem;
     border-top: 1px solid var(--primary-color);
     display: flex;
