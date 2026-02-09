@@ -3,8 +3,7 @@ import styled from "styled-components";
 import { IoMdClose, IoMdMoon, IoMdSunny, IoMdRefresh } from "react-icons/io";
 import { FaPhoneAlt, FaCamera, FaCheck } from "react-icons/fa";
 import axios from "axios";
-import { Buffer } from "buffer";
-import { setAvatarRoute } from "../utils/APIRoutes";
+import { setAvatarRoute, generateAvatarRoute } from "../utils/APIRoutes"; // 👈 Import Route
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -17,8 +16,6 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
   const [avatars, setAvatars] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(undefined);
-  
-  const api = `https://api.multiavatar.com/4645646`; // Public API key
 
   const toastOptions = {
     position: "bottom-right",
@@ -28,7 +25,6 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
     theme: "dark",
   };
 
-  // Calculate blocked users
   const blockedCount = useMemo(() => {
     if (!isOpen) return 0;
     const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
@@ -43,18 +39,14 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
     }
   }, [theme]);
 
-  // Fetch New Avatars when entering Edit Mode
+  // 👇 UPDATED: Fetch Avatars from OUR Backend
   const fetchAvatars = async () => {
     setIsLoading(true);
-    const data = [];
     try {
-        for (let i = 0; i < 4; i++) {
-            const image = await axios.get(`${api}/${Math.round(Math.random() * 1000)}`);
-            const buffer = new Buffer(image.data);
-            data.push(buffer.toString("base64"));
-        }
+        const { data } = await axios.get(generateAvatarRoute);
         setAvatars(data);
     } catch (err) {
+        console.error(err);
         toast.error("Error fetching avatars. Please try again.", toastOptions);
     }
     setIsLoading(false);
@@ -77,7 +69,6 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
         });
 
         if (data.isSet) {
-            // Update Parent and LocalStorage via the passed function
             onAvatarUpdate(avatars[selectedAvatar]);
             setIsEditingAvatar(false);
             toast.success("Profile picture updated!", toastOptions);
@@ -107,7 +98,6 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
       </div>
 
       <div className="content">
-        {/* --- AVATAR SECTION --- */}
         <div className="section centered">
             {!isEditingAvatar ? (
                 <div className="avatar-preview current">
@@ -232,7 +222,6 @@ const Drawer = styled.div`
             color: var(--text-main);
         }
 
-        /* Avatar Styles */
         .avatar-preview.current {
             position: relative;
             cursor: pointer;
@@ -265,7 +254,6 @@ const Drawer = styled.div`
             &:hover .overlay { opacity: 1; }
         }
         
-        /* Selection Mode Styles */
         .avatar-selection {
             display: flex;
             flex-direction: column;

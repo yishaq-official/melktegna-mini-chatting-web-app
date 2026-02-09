@@ -9,3 +9,5 @@ export const deleteMessageRoute = `${host}/api/messages/deleteparams`;
 // 👇 NEW ROUTES
 export const blockUserRoute = `${host}/api/auth/block`;
 export const unblockUserRoute = `${host}/api/auth/unblock`;
+
+export const generateAvatarRoute = `${host}/api/auth/generateavatar`;
