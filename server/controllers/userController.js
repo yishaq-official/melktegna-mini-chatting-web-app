@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
-const Messages = require("../models/messageModel"); // <--- Import Message Model
+const Messages = require("../models/messageModel");
 const bcrypt = require("bcryptjs");
+const axios = require("axios"); // 👈 NEW IMPORT
 
 module.exports.register = async (req, res, next) => {
   try {
@@ -61,12 +62,9 @@ module.exports.setAvatar = async (req, res, next) => {
   }
 };
 
-// 👇 UPDATED: Get Users + Unread Counts
 module.exports.getAllUsers = async (req, res, next) => {
   try {
     const currentUserId = req.params.id;
-    
-    // 1. Find all other users
     const users = await User.find({ _id: { $ne: currentUserId } }).select([
       "email",
       "username",
@@ -74,16 +72,13 @@ module.exports.getAllUsers = async (req, res, next) => {
       "_id",
     ]);
 
-    // 2. Calculate unread messages for each user
-    // We use Promise.all because we are running a DB query inside a map loop
     const usersWithCounts = await Promise.all(
       users.map(async (user) => {
         const count = await Messages.countDocuments({
-          sender: user._id, // Sent BY them
-          users: { $all: [currentUserId, user._id] }, // In our chat
-          read: false, // And NOT read
+          sender: user._id,
+          users: { $all: [currentUserId, user._id] },
+          read: false,
         });
-        
         return { ...user.toObject(), unreadCount: count };
       })
     );
@@ -120,6 +115,25 @@ module.exports.unblockUser = async (req, res, next) => {
         return res.json({ status: true, msg: "User unblocked" });
     }
     return res.json({ status: false, msg: "User was not blocked" });
+  } catch (ex) {
+    next(ex);
+  }
+};
+
+// 👇 NEW: Proxy Function to generate Avatars
+module.exports.generateRandomAvatars = async (req, res, next) => {
+  try {
+    const images = [];
+    for (let i = 0; i < 4; i++) {
+        // Generate a random seed
+        const seed = Math.round(Math.random() * 100000);
+        // Fetch SVG from Multiavatar
+        const response = await axios.get(`https://api.multiavatar.com/${seed}.svg`);
+        // Convert SVG string to Buffer then to Base64
+        const buffer = Buffer.from(response.data);
+        images.push(buffer.toString("base64"));
+    }
+    return res.json(images);
   } catch (ex) {
     next(ex);
   }
