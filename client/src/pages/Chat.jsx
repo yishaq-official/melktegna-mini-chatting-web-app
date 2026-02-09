@@ -84,7 +84,7 @@ export default function Chat() {
         socket.current.off("msg-recieve", handleMsgRecieve);
       };
     }
-  }, [currentChat]); // Re-run whenever currentChat changes to update the "if" check logic
+  }, [currentChat]); 
 
   // 5. Clear Unread Count when Chat Opens
   const handleChatChange = (chat) => {
@@ -95,6 +95,16 @@ export default function Chat() {
         c._id === chat._id ? { ...c, unreadCount: 0 } : c
       )
     );
+  };
+
+  // 👇 NEW: Handle Avatar Update from Settings
+  const handleAvatarUpdate = (newImage) => {
+    // 1. Update State
+    const updatedUser = { ...currentUser, avatarImage: newImage };
+    setCurrentUser(updatedUser);
+    
+    // 2. Update Local Storage so changes persist on refresh
+    localStorage.setItem("melktegna-user", JSON.stringify(updatedUser));
   };
 
   return (
@@ -122,6 +132,7 @@ export default function Chat() {
             isOpen={isSettingsOpen} 
             toggleSettings={() => setIsSettingsOpen(false)} 
             currentUser={currentUser}
+            onAvatarUpdate={handleAvatarUpdate} // 👈 Pass the function here
           />
         )}
       </div>
