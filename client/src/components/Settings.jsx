@@ -1,26 +1,40 @@
 import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
-import { IoMdClose, IoMdMoon, IoMdSunny } from "react-icons/io";
-import { FaPhoneAlt } from "react-icons/fa";
+import { IoMdClose, IoMdMoon, IoMdSunny, IoMdRefresh } from "react-icons/io";
+import { FaPhoneAlt, FaCamera, FaCheck } from "react-icons/fa";
+import axios from "axios";
+import { Buffer } from "buffer";
+import { setAvatarRoute } from "../utils/APIRoutes";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-export default function Settings({ isOpen, toggleSettings, currentUser }) {
-  // Lazy init for theme to avoid re-reading localStorage on every render
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("melktegna-theme") || "dark";
-  });
-  
+export default function Settings({ isOpen, toggleSettings, currentUser, onAvatarUpdate }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem("melktegna-theme") || "dark");
   const [phone, setPhone] = useState(currentUser.phoneNumber || "");
+  
+  // --- AVATAR EDITING STATE ---
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  const [avatars, setAvatars] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(undefined);
+  
+  const api = `https://api.multiavatar.com/4645646`; // Public API key
 
-  // Fix: Use useMemo instead of useState+useEffect.
-  // This calculates the count instantly when 'isOpen' changes, 
-  // preventing the "Cascading Render" error.
+  const toastOptions = {
+    position: "bottom-right",
+    autoClose: 5000,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "dark",
+  };
+
+  // Calculate blocked users
   const blockedCount = useMemo(() => {
     if (!isOpen) return 0;
     const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
     return (localUser && localUser.blockedUsers) ? localUser.blockedUsers.length : 0;
   }, [isOpen]);
 
-  // Apply Theme Effect
   useEffect(() => {
     if (theme === "light") {
       document.body.classList.add("light-theme");
@@ -28,6 +42,52 @@ export default function Settings({ isOpen, toggleSettings, currentUser }) {
       document.body.classList.remove("light-theme");
     }
   }, [theme]);
+
+  // Fetch New Avatars when entering Edit Mode
+  const fetchAvatars = async () => {
+    setIsLoading(true);
+    const data = [];
+    try {
+        for (let i = 0; i < 4; i++) {
+            const image = await axios.get(`${api}/${Math.round(Math.random() * 1000)}`);
+            const buffer = new Buffer(image.data);
+            data.push(buffer.toString("base64"));
+        }
+        setAvatars(data);
+    } catch (err) {
+        toast.error("Error fetching avatars. Please try again.", toastOptions);
+    }
+    setIsLoading(false);
+  };
+
+  const handleEditClick = () => {
+    setIsEditingAvatar(true);
+    fetchAvatars();
+  };
+
+  const saveNewAvatar = async () => {
+    if (selectedAvatar === undefined) {
+      toast.error("Please select an avatar", toastOptions);
+      return;
+    }
+
+    try {
+        const { data } = await axios.post(`${setAvatarRoute}/${currentUser._id}`, {
+            image: avatars[selectedAvatar],
+        });
+
+        if (data.isSet) {
+            // Update Parent and LocalStorage via the passed function
+            onAvatarUpdate(avatars[selectedAvatar]);
+            setIsEditingAvatar(false);
+            toast.success("Profile picture updated!", toastOptions);
+        } else {
+            toast.error("Error setting avatar. Please try again.", toastOptions);
+        }
+    } catch (error) {
+        toast.error("Network error.", toastOptions);
+    }
+  };
 
   const handleThemeChange = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -47,10 +107,40 @@ export default function Settings({ isOpen, toggleSettings, currentUser }) {
       </div>
 
       <div className="content">
-        <div className="section">
-            <div className="avatar-preview">
-                <img src={`data:image/svg+xml;base64,${currentUser.avatarImage}`} alt="" />
-            </div>
+        {/* --- AVATAR SECTION --- */}
+        <div className="section centered">
+            {!isEditingAvatar ? (
+                <div className="avatar-preview current">
+                    <img src={`data:image/svg+xml;base64,${currentUser.avatarImage}`} alt="" />
+                    <div className="overlay" onClick={handleEditClick}>
+                        <FaCamera /> <span>Change</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="avatar-selection">
+                    {isLoading ? (
+                        <div className="loader">Loading...</div>
+                    ) : (
+                        <div className="avatars">
+                            {avatars.map((avatar, index) => (
+                                <div
+                                    key={index}
+                                    className={`avatar-item ${selectedAvatar === index ? "selected" : ""}`}
+                                    onClick={() => setSelectedAvatar(index)}
+                                >
+                                    <img src={`data:image/svg+xml;base64,${avatar}`} alt="avatar" />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="avatar-actions">
+                        <button className="secondary" onClick={() => fetchAvatars()}><IoMdRefresh /></button>
+                        <button className="primary" onClick={saveNewAvatar}><FaCheck /></button>
+                        <button className="cancel" onClick={() => setIsEditingAvatar(false)}>Cancel</button>
+                    </div>
+                </div>
+            )}
+            
             <h2>{currentUser.username}</h2>
             <p>{currentUser.email}</p>
         </div>
@@ -90,6 +180,7 @@ export default function Settings({ isOpen, toggleSettings, currentUser }) {
             )}
         </div>
       </div>
+      <ToastContainer />
     </Drawer>
   );
 }
@@ -123,11 +214,16 @@ const Drawer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    overflow-y: auto;
 
     .section {
         display: flex;
         flex-direction: column;
         gap: 0.8rem;
+        
+        &.centered {
+            align-items: center;
+        }
         
         &.row {
             flex-direction: row;
@@ -136,11 +232,91 @@ const Drawer = styled.div`
             color: var(--text-main);
         }
 
-        .avatar-preview img {
-            height: 6rem;
-            border-radius: 50%;
-            margin-bottom: 0.5rem;
+        /* Avatar Styles */
+        .avatar-preview.current {
+            position: relative;
+            cursor: pointer;
+            width: 8rem;
+            height: 8rem;
+            
+            img {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                border: 4px solid var(--primary-color);
+            }
+            
+            .overlay {
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.6);
+                border-radius: 50%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                opacity: 0;
+                transition: 0.3s;
+                color: white;
+                font-size: 1.5rem;
+                span { font-size: 0.8rem; margin-top: 5px; }
+            }
+            
+            &:hover .overlay { opacity: 1; }
         }
+        
+        /* Selection Mode Styles */
+        .avatar-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            
+            .loader { color: var(--text-secondary); }
+            
+            .avatars {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                .avatar-item {
+                    border: 0.4rem solid transparent;
+                    padding: 0.2rem;
+                    border-radius: 50%;
+                    width: 4rem;
+                    height: 4rem;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    transition: 0.3s;
+                    cursor: pointer;
+                    img { height: 100%; }
+                }
+                .selected {
+                    border-color: var(--primary-color);
+                }
+            }
+            
+            .avatar-actions {
+                display: flex;
+                gap: 1rem;
+                button {
+                    padding: 0.5rem;
+                    border-radius: 50%;
+                    border: none;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.2rem;
+                    width: 2.5rem; height: 2.5rem;
+                    
+                    &.primary { background: var(--primary-color); color: white; }
+                    &.secondary { background: #555; color: white; }
+                    &.cancel { background: transparent; color: #ef4444; width: auto; font-size: 0.9rem; border-radius: 0.5rem; padding: 0 1rem; }
+                }
+            }
+        }
+
         h2 { color: var(--text-main); }
         p { color: var(--text-secondary); font-size: 0.9rem; }
         
