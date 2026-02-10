@@ -8,6 +8,9 @@ import ChatContainer from "../components/ChatContainer";
 import Contacts from "../components/Contacts";
 import Welcome from "../components/Welcome";
 import Settings from "../components/Settings";
+// 👇 Import ToastContainer here to handle notifications globally
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -53,14 +56,10 @@ export default function Chat() {
     getContacts();
   }, [currentUser, navigate]);
 
-  // 4. LISTEN FOR INCOMING MESSAGES (FIXED DUPLICATION BUG)
+  // 4. Listen for Incoming Messages
   useEffect(() => {
     if (socket.current) {
-      // Define the handler function
       const handleMsgRecieve = (data) => {
-        // data = { message: "...", from: "sender_id" }
-        
-        // Only increment count if we are NOT currently chatting with the sender
         if (!currentChat || currentChat._id !== data.from) { 
            setContacts((prevContacts) => 
              prevContacts.map((contact) => {
@@ -76,20 +75,17 @@ export default function Chat() {
         }
       };
 
-      // Add Listener
       socket.current.on("msg-recieve", handleMsgRecieve);
 
-      // 👇 CLEANUP FUNCTION: Remove listener when dependencies change
       return () => {
         socket.current.off("msg-recieve", handleMsgRecieve);
       };
     }
   }, [currentChat]); 
 
-  // 5. Clear Unread Count when Chat Opens
+  // 5. Chat Change Handler
   const handleChatChange = (chat) => {
     setCurrentChat(chat);
-    // Reset the unread count locally instantly
     setContacts((prev) => 
       prev.map((c) => 
         c._id === chat._id ? { ...c, unreadCount: 0 } : c
@@ -97,13 +93,10 @@ export default function Chat() {
     );
   };
 
-  // 👇 NEW: Handle Avatar Update from Settings
+  // 6. Handle Avatar Update
   const handleAvatarUpdate = (newImage) => {
-    // 1. Update State
     const updatedUser = { ...currentUser, avatarImage: newImage };
     setCurrentUser(updatedUser);
-    
-    // 2. Update Local Storage so changes persist on refresh
     localStorage.setItem("melktegna-user", JSON.stringify(updatedUser));
   };
 
@@ -132,10 +125,12 @@ export default function Chat() {
             isOpen={isSettingsOpen} 
             toggleSettings={() => setIsSettingsOpen(false)} 
             currentUser={currentUser}
-            onAvatarUpdate={handleAvatarUpdate} // 👈 Pass the function here
+            onAvatarUpdate={handleAvatarUpdate}
           />
         )}
       </div>
+      {/* 👇 Added Global Toast Container here */}
+      <ToastContainer />
     </Container>
   );
 }

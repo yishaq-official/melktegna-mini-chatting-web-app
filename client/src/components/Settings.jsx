@@ -3,8 +3,8 @@ import styled from "styled-components";
 import { IoMdClose, IoMdMoon, IoMdSunny, IoMdRefresh } from "react-icons/io";
 import { FaPhoneAlt, FaCamera, FaCheck } from "react-icons/fa";
 import axios from "axios";
-import { setAvatarRoute, generateAvatarRoute } from "../utils/APIRoutes"; // 👈 Import Route
-import { toast, ToastContainer } from "react-toastify";
+import { setAvatarRoute, generateAvatarRoute } from "../utils/APIRoutes";
+import { toast } from "react-toastify"; // Removed ToastContainer import
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Settings({ isOpen, toggleSettings, currentUser, onAvatarUpdate }) {
@@ -39,7 +39,7 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
     }
   }, [theme]);
 
-  // 👇 UPDATED: Fetch Avatars from OUR Backend
+  // Fetch Avatars
   const fetchAvatars = async () => {
     setIsLoading(true);
     try {
@@ -123,11 +123,18 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
                             ))}
                         </div>
                     )}
+                    {/* 👇 REDESIGNED BUTTONS */}
                     <div className="avatar-actions">
-                        <button className="secondary" onClick={() => fetchAvatars()}><IoMdRefresh /></button>
-                        <button className="primary" onClick={saveNewAvatar}><FaCheck /></button>
-                        <button className="cancel" onClick={() => setIsEditingAvatar(false)}>Cancel</button>
+                        <button className="secondary" onClick={() => fetchAvatars()}>
+                            <IoMdRefresh /> Generate New
+                        </button>
+                        <button className="primary" onClick={saveNewAvatar}>
+                            <FaCheck /> Save Avatar
+                        </button>
                     </div>
+                    <button className="cancel-link" onClick={() => setIsEditingAvatar(false)}>
+                        Cancel
+                    </button>
                 </div>
             )}
             
@@ -163,14 +170,9 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
                     ? `You have ${blockedCount} blocked user(s).` 
                     : "No blocked users"}
             </div>
-            {blockedCount > 0 && (
-                <small style={{color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'center'}}>
-                    Go to a chat to unblock a user.
-                </small>
-            )}
         </div>
       </div>
-      <ToastContainer />
+      {/* Removed local ToastContainer to prevent duplicates */}
     </Drawer>
   );
 }
@@ -227,14 +229,12 @@ const Drawer = styled.div`
             cursor: pointer;
             width: 8rem;
             height: 8rem;
-            
             img {
                 width: 100%;
                 height: 100%;
                 border-radius: 50%;
                 border: 4px solid var(--primary-color);
             }
-            
             .overlay {
                 position: absolute;
                 top: 0; left: 0; width: 100%; height: 100%;
@@ -250,15 +250,16 @@ const Drawer = styled.div`
                 font-size: 1.5rem;
                 span { font-size: 0.8rem; margin-top: 5px; }
             }
-            
             &:hover .overlay { opacity: 1; }
         }
         
+        /* UPDATED AVATAR SELECTION STYLES */
         .avatar-selection {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1rem;
+            gap: 1.5rem;
+            width: 100%;
             
             .loader { color: var(--text-secondary); }
             
@@ -285,23 +286,44 @@ const Drawer = styled.div`
             }
             
             .avatar-actions {
-                display: flex;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
                 gap: 1rem;
+                width: 100%;
+                
                 button {
-                    padding: 0.5rem;
-                    border-radius: 50%;
+                    padding: 0.6rem 1rem;
+                    border-radius: 0.5rem;
                     border: none;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 1.2rem;
-                    width: 2.5rem; height: 2.5rem;
+                    gap: 0.5rem;
+                    font-size: 0.9rem;
+                    font-weight: bold;
+                    transition: 0.2s;
                     
-                    &.primary { background: var(--primary-color); color: white; }
-                    &.secondary { background: #555; color: white; }
-                    &.cancel { background: transparent; color: #ef4444; width: auto; font-size: 0.9rem; border-radius: 0.5rem; padding: 0 1rem; }
+                    &.primary { 
+                        background: var(--primary-color); 
+                        color: white; 
+                        &:hover { opacity: 0.9; }
+                    }
+                    &.secondary { 
+                        background: #4a4a4a; 
+                        color: white; 
+                        &:hover { background: #5a5a5a; }
+                    }
                 }
+            }
+            
+            .cancel-link {
+                background: transparent;
+                border: none;
+                color: #ef4444;
+                cursor: pointer;
+                font-size: 0.9rem;
+                text-decoration: underline;
             }
         }
 
