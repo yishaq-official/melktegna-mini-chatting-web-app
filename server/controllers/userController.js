@@ -1,7 +1,7 @@
 const User = require("../models/userModel");
 const Messages = require("../models/messageModel");
 const bcrypt = require("bcryptjs");
-const axios = require("axios"); // 👈 NEW IMPORT
+const multiavatar = require("@multiavatar/multiavatar");
 
 module.exports.register = async (req, res, next) => {
   try {
@@ -120,17 +120,18 @@ module.exports.unblockUser = async (req, res, next) => {
   }
 };
 
-// 👇 NEW: Proxy Function to generate Avatars
 module.exports.generateRandomAvatars = async (req, res, next) => {
   try {
     const images = [];
     for (let i = 0; i < 4; i++) {
-        // Generate a random seed
+        // 1. Generate random string for seed
         const seed = Math.round(Math.random() * 100000);
-        // Fetch SVG from Multiavatar
-        const response = await axios.get(`https://api.multiavatar.com/${seed}.svg`);
-        // Convert SVG string to Buffer then to Base64
-        const buffer = Buffer.from(response.data);
+        
+        // 2. Generate SVG locally using the library
+        const svg = multiavatar(JSON.stringify(seed));
+        
+        // 3. Convert to Base64 (Frontend expects this format)
+        const buffer = Buffer.from(svg);
         images.push(buffer.toString("base64"));
     }
     return res.json(images);
