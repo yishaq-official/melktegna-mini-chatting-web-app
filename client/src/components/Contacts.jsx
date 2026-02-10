@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import Logout from "./Logout";
+import Logo from "./Logo";
 import { IoMdSettings } from "react-icons/io";
 
 export default function Contacts({ contacts, currentUser, changeChat, onSettingsClick }) {
@@ -16,7 +17,7 @@ export default function Contacts({ contacts, currentUser, changeChat, onSettings
       {currentUser && currentUser.avatarImage && currentUser.username && (
         <Container>
           <div className="brand">
-            <h3>Melktegna</h3>
+            <Logo size="1.2rem" />
           </div>
           <div className="contacts">
             {contacts.map((contact, index) => {

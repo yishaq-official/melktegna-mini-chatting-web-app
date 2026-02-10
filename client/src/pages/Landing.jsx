@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { IoMdMoon, IoMdSunny, IoMdArrowForward } from "react-icons/io";
+import { IoMdMoon, IoMdSunny, IoMdArrowForward, IoMdFlash, IoMdLock, IoMdInfinite, IoMdColorPalette, IoMdGlobe, IoMdPhonePortrait } from "react-icons/io";
+import { FaGithub, FaTwitter, FaLinkedin } from "react-icons/fa";
 import Logo from "../components/Logo";
 
 export default function Landing() {
   const navigate = useNavigate();
-  // Initialize theme from localStorage or default to dark
   const [theme, setTheme] = useState(localStorage.getItem("melktegna-theme") || "dark");
 
   useEffect(() => {
-    // Apply theme class to body
     if (theme === "light") {
       document.body.classList.add("light-theme");
     } else {
@@ -23,10 +22,19 @@ export default function Landing() {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const features = [
+    { icon: <IoMdFlash />, title: "Fast", desc: "Melktegna delivers messages faster than any other application." },
+    { icon: <IoMdLock />, title: "Secure", desc: "We take your security seriously. Your chats are yours alone." },
+    { icon: <IoMdInfinite />, title: "Unlimited", desc: "No limits on the size of your media and chats." },
+    { icon: <IoMdColorPalette />, title: "Themed", desc: "Switch between light and dark modes to suit your vibe." },
+    { icon: <IoMdGlobe />, title: "Synced", desc: "Access your messages from multiple devices at once." },
+    { icon: <IoMdPhonePortrait />, title: "Simple", desc: "A minimalist interface that anyone can use instantly." },
+  ];
+
   return (
     <Container>
       <Navbar>
-        <Logo size="2.5rem" />
+        <Logo size="2rem" />
         <div className="nav-actions">
             <div className="theme-toggle" onClick={toggleTheme}>
                 {theme === "dark" ? <IoMdMoon /> : <IoMdSunny />}
@@ -66,6 +74,43 @@ export default function Landing() {
             </div>
         </div>
       </Hero>
+
+      {/* FEATURES SECTION */}
+      <FeaturesSection>
+        <h2>Why Melktegna?</h2>
+        <div className="grid">
+            {features.map((f, index) => (
+                <div className="feature-card" key={index}>
+                    <div className="icon">{f.icon}</div>
+                    <h3>{f.title}</h3>
+                    <p>{f.desc}</p>
+                </div>
+            ))}
+        </div>
+      </FeaturesSection>
+
+      {/* FOOTER */}
+      <Footer>
+        <div className="footer-content">
+            <div className="brand-col">
+                <Logo size="1.5rem" />
+                <p>Connecting people, one message at a time.</p>
+            </div>
+            <div className="links">
+                <span>About</span>
+                <span>Privacy Policy</span>
+                <span>Terms of Service</span>
+            </div>
+            <div className="socials">
+                <FaGithub />
+                <FaTwitter />
+                <FaLinkedin />
+            </div>
+        </div>
+        <div className="copy">
+            &copy; {new Date().getFullYear()} Melktegna. Made with ❤️ in Ethiopia.
+        </div>
+      </Footer>
     </Container>
   );
 }
@@ -84,21 +129,37 @@ const floatDelay = keyframes`
 `;
 
 // --- STYLES ---
+
+// 👇 FIXED: Changed height to min-height and allowed scrolling
 const Container = styled.div`
-  height: 100vh;
+  height: 100vh;        /* 1. Force exact screen height */
   width: 100vw;
   background-color: var(--bg-color);
   color: var(--text-main);
-  overflow: hidden;
+  
+  overflow-x: hidden;   /* 2. No horizontal scroll */
+  overflow-y: auto;     /* 3. Allow vertical scroll INSIDE this div */
+  
   display: flex;
   flex-direction: column;
-`;
 
+  /* 4. Smooth scrolling for the internal container */
+  scroll-behavior: smooth; 
+
+  /* Optional: Custom Scrollbar for the Landing Page */
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 1rem;
+  }
+`;
 const Navbar = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 4rem;
+  padding: 1.5rem 10%;
   
   .nav-actions {
     display: flex;
@@ -131,38 +192,39 @@ const Navbar = styled.nav`
 `;
 
 const Hero = styled.div`
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 6rem;
+  padding: 4rem 10%;
+  min-height: 85vh; /* Takes up most of the first screen */
   
   @media (max-width: 900px) {
     flex-direction: column;
     justify-content: center;
     text-align: center;
-    padding: 0 2rem;
     gap: 4rem;
+    padding-top: 2rem;
   }
 
   .content {
-    max-width: 500px;
+    max-width: 600px;
     z-index: 2;
     
     h1 {
         font-size: 4rem;
         line-height: 1.1;
         margin-bottom: 1.5rem;
-        .highlight {
-            color: var(--primary-color);
-        }
+        font-weight: 800;
+        .highlight { color: var(--primary-color); }
     }
     
     p {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         color: var(--text-secondary);
         line-height: 1.6;
         margin-bottom: 2.5rem;
+        width: 90%;
+        @media (max-width: 900px) { width: 100%; }
     }
     
     .primary-btn {
@@ -183,25 +245,23 @@ const Hero = styled.div`
             transform: translateY(-3px);
             box-shadow: 0 15px 30px rgba(78, 203, 113, 0.4);
         }
+        
+        @media (max-width: 900px) {
+           margin: 0 auto;
+        }
     }
   }
 
   .visuals {
     position: relative;
-    width: 500px;
-    height: 500px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 450px;
+    height: 450px;
     
-    @media (max-width: 900px) {
-        display: none; /* Hide visuals on mobile for simplicity */
-    }
+    @media (max-width: 900px) { display: none; }
 
     .circle-bg {
         position: absolute;
-        width: 400px;
-        height: 400px;
+        width: 100%; height: 100%;
         background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
         opacity: 0.15;
         border-radius: 50%;
@@ -217,23 +277,102 @@ const Hero = styled.div`
         align-items: center;
         gap: 1rem;
         position: absolute;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         max-width: 300px;
-        
         .avatar { font-size: 2rem; }
         .msg { color: var(--text-main); font-size: 0.9rem; }
     }
 
-    .card-1 {
-        top: 30%;
-        left: 0;
-        animation: ${float} 6s ease-in-out infinite;
+    .card-1 { top: 30%; left: 0; animation: ${float} 6s ease-in-out infinite; }
+    .card-2 { bottom: 30%; right: 0; animation: ${floatDelay} 7s ease-in-out infinite; }
+  }
+`;
+
+const FeaturesSection = styled.div`
+  padding: 6rem 10%;
+  background-color: var(--panel-bg);
+  text-align: center;
+  
+  h2 {
+    font-size: 2.5rem;
+    margin-bottom: 4rem;
+    color: var(--text-main);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 4rem;
+  }
+
+  .feature-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+    
+    .icon {
+        font-size: 4rem;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        transition: 0.3s;
     }
     
-    .card-2 {
-        bottom: 30%;
-        right: 0;
-        animation: ${floatDelay} 7s ease-in-out infinite;
+    h3 { font-size: 1.4rem; color: var(--text-main); }
+    p { color: var(--text-secondary); line-height: 1.6; font-size: 1rem; width: 85%; }
+    
+    &:hover .icon {
+        transform: scale(1.1) rotate(5deg);
     }
+  }
+`;
+
+const Footer = styled.footer`
+  padding: 4rem 10% 2rem;
+  border-top: 1px solid rgba(134, 150, 160, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  background-color: var(--bg-color);
+  
+  .footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 2rem;
+    
+    .brand-col {
+        display: flex; 
+        flex-direction: column; 
+        gap: 1rem;
+        max-width: 300px;
+        p { color: var(--text-secondary); line-height: 1.5; }
+    }
+    
+    .links {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        color: var(--text-secondary);
+        span { cursor: pointer; transition: 0.2s; &:hover { color: var(--primary-color); } }
+    }
+    
+    .socials {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        svg { cursor: pointer; transition: 0.2s; &:hover { color: var(--primary-color); } }
+    }
+  }
+  
+  .copy {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(134, 150, 160, 0.1);
+    padding-top: 2rem;
   }
 `;
