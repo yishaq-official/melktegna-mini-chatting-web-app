@@ -53,6 +53,8 @@ module.exports.getMessages = async (req, res, next) => {
         _id: msg._id,
         fromSelf: msg.sender.toString() === from,
         message: msg.message.text,
+        createdAt: msg.createdAt,
+        read: msg.read
       };
     });
     res.json(projectedMessages);

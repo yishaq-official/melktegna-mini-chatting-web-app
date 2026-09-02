@@ -4,10 +4,11 @@ import { IoMdSend, IoMdClose } from "react-icons/io";
 import styled from "styled-components";
 import Picker from "emoji-picker-react";
 
-export default function ChatInput({ handleSendMsg, replyingTo, cancelReply }) {
+export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, socket, currentChat, currentUser }) {
   const [msg, setMsg] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   // Focus input when replying starts
   useEffect(() => {
@@ -16,13 +17,32 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply }) {
     }
   }, [replyingTo]);
 
+  const handleInputChange = (e) => {
+    setMsg(e.target.value);
+
+    // Typing socket event handling
+    if (socket?.current && currentChat && currentUser) {
+      socket.current.emit("typing", { to: currentChat._id, from: currentUser._id });
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.current.emit("stop-typing", { to: currentChat._id, from: currentUser._id });
+      }, 1500);
+    }
+  };
+
   const handleEmojiClick = (emojiObject) => {
     setMsg((prevMsg) => prevMsg + emojiObject.emoji);
   };
 
   const sendChat = (event) => {
     event.preventDefault();
-    if (msg.length > 0) {
+    if (msg.trim().length > 0) {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (socket?.current && currentChat && currentUser) {
+        socket.current.emit("stop-typing", { to: currentChat._id, from: currentUser._id });
+      }
       handleSendMsg(msg);
       setMsg("");
     }
@@ -55,8 +75,8 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply }) {
         <input
           ref={inputRef}
           type="text"
-          placeholder="Type a message"
-          onChange={(e) => setMsg(e.target.value)}
+          placeholder="Type a message..."
+          onChange={handleInputChange}
           value={msg}
         />
         <button type="submit">

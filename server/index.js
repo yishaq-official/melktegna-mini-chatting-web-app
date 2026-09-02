@@ -55,7 +55,35 @@ io.on("connection", (socket) => {
       // Emit to that specific user only
       socket.to(sendUserSocket).emit("msg-recieve", {
         message: data.msg,
-        from: data.from // <--- CRITICAL: We need to know who sent it!
+        from: data.from, // <--- CRITICAL: We need to know who sent it!
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+    }
+  });
+
+  // 3. Typing Indicators
+  socket.on("typing", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("typing", { from: data.from });
+    }
+  });
+
+  socket.on("stop-typing", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("stop-typing", { from: data.from });
+    }
+  });
+
+  // 4. Message Reactions
+  socket.on("react-msg", (data) => {
+    const sendUserSocket = onlineUsers.get(data.to);
+    if (sendUserSocket) {
+      socket.to(sendUserSocket).emit("react-msg", {
+        msgIndex: data.msgIndex,
+        emoji: data.emoji,
+        from: data.from
       });
     }
   });
