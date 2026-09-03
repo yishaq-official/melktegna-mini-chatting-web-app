@@ -8,7 +8,15 @@ import { sendMessageRoute, recieveMessageRoute, deleteMessageRoute } from "../ut
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
-import { IoMdArrowBack } from "react-icons/io";
+import {
+  IoMdArrowBack,
+  IoMdCloudUpload,
+  IoMdDownload,
+  IoMdDocument,
+  IoMdPlay,
+  IoMdPause,
+  IoMdClose,
+} from "react-icons/io";
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
@@ -16,6 +24,8 @@ export default function ChatContainer({ currentChat, currentUser, socket, onBack
   const [messages, setMessages] = useState([]);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [previewMediaUrl, setPreviewMediaUrl] = useState(null); // Lightbox modal state
   const scrollRef = useRef();
   
   // --- CONTEXT MENU STATE ---
@@ -250,16 +260,115 @@ export default function ChatContainer({ currentChat, currentUser, socket, onBack
       : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Drag and Drop Event Handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const isImg = file.type.startsWith("image/");
+        const payload = isImg
+          ? `[IMAGE:${reader.result}] Shared ${file.name}`
+          : `[DOC:${file.name}|${(file.size / 1024).toFixed(1)} KB|${reader.result}]`;
+        handleSendMsg(payload);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const renderMessageContent = (msgText) => {
-    if (typeof msgText !== 'string') {
-        return <p>{String(msgText)}</p>; 
+    if (typeof msgText !== "string") {
+      return <p>{String(msgText)}</p>;
     }
 
-    const replyRegex = /^> Replying to (.*?):\n"([\s\S]*?)"\n\n([\s\S]*)/;
-    const match = msgText.match(replyRegex);
+    // 1. Image Attachment Match: [IMAGE:dataUrl] Caption
+    const imgRegex = /^\[IMAGE:(.*?)\](?:\s*([\s\S]*))?$/;
+    const imgMatch = msgText.match(imgRegex);
+    if (imgMatch) {
+      const [, dataUrl, caption] = imgMatch;
+      return (
+        <div className="media-attachment image-attachment">
+          <img
+            src={dataUrl}
+            alt="attachment"
+            className="chat-img-thumb"
+            onClick={() => setPreviewMediaUrl(dataUrl)}
+          />
+          {caption && <p className="media-caption">{caption}</p>}
+        </div>
+      );
+    }
 
-    if (match) {
-      const [, name, quotedText, actualMessage] = match;
+    // 2. Document Attachment Match: [DOC:name|size|dataUrl]
+    const docRegex = /^\[DOC:(.*?)\|(.*?)\|(.*?)\](?:\s*([\s\S]*))?$/;
+    const docMatch = msgText.match(docRegex);
+    if (docMatch) {
+      const [, name, size, dataUrl, caption] = docMatch;
+      return (
+        <div className="media-attachment doc-attachment">
+          <div className="doc-card">
+            <div className="doc-icon-box">
+              <IoMdDocument />
+            </div>
+            <div className="doc-details">
+              <span className="doc-name">{name}</span>
+              <span className="doc-size">{size}</span>
+            </div>
+            <a href={dataUrl} download={name} className="download-btn" title="Download Document">
+              <IoMdDownload />
+            </a>
+          </div>
+          {caption && <p className="media-caption">{caption}</p>}
+        </div>
+      );
+    }
+
+    // 3. Voice / Audio Attachment Match: [VOICE:duration] or [AUDIO:name|dataUrl]
+    const voiceRegex = /^\[VOICE:(.*?)\](?:\s*([\s\S]*))?$/;
+    const voiceMatch = msgText.match(voiceRegex);
+    if (voiceMatch) {
+      const [, duration] = voiceMatch;
+      return (
+        <div className="media-attachment voice-attachment">
+          <div className="voice-player">
+            <div className="play-icon-box">
+              <IoMdPlay />
+            </div>
+            <div className="voice-wave-container">
+              <div className="voice-wave-bar" />
+              <div className="voice-wave-bar tall" />
+              <div className="voice-wave-bar" />
+              <div className="voice-wave-bar tall" />
+              <div className="voice-wave-bar" />
+            </div>
+            <span className="voice-duration">{duration}</span>
+          </div>
+        </div>
+      );
+    }
+
+    // 4. Replying Match
+    const replyRegex = /^> Replying to (.*?):\n"([\s\S]*?)"\n\n([\s\S]*)/;
+    const replyMatch = msgText.match(replyRegex);
+    if (replyMatch) {
+      const [, name, quotedText, actualMessage] = replyMatch;
       return (
         <div className="message-wrapper">
           <div className="reply-block">
@@ -270,6 +379,7 @@ export default function ChatContainer({ currentChat, currentUser, socket, onBack
         </div>
       );
     }
+
     return <p>{msgText}</p>;
   };
 
@@ -280,7 +390,31 @@ export default function ChatContainer({ currentChat, currentUser, socket, onBack
   ];
 
   return (
-    <Container>
+    <Container
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag & Drop Glass Overlay */}
+      {isDraggingOver && (
+        <div className="drag-overlay">
+          <div className="drag-content">
+            <IoMdCloudUpload className="cloud-icon" />
+            <h3>Drop files here to send</h3>
+            <p>Images, documents, and media files supported</p>
+          </div>
+        </div>
+      )}
+
+      {/* Image Lightbox Modal */}
+      {previewMediaUrl && (
+        <div className="lightbox-modal" onClick={() => setPreviewMediaUrl(null)}>
+          <button className="close-lightbox" onClick={() => setPreviewMediaUrl(null)}>
+            <IoMdClose />
+          </button>
+          <img src={previewMediaUrl} alt="Preview full" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
       <div className="chat-header">
         <div className="header-left">
           {onBack && (
@@ -694,6 +828,195 @@ const Container = styled.div`
           &:nth-child(2) { animation-delay: -0.16s; }
           &:nth-child(3) { animation-delay: 0s; }
         }
+      }
+    }
+  }
+
+  /* --- DRAG & DROP OVERLAY --- */
+  .drag-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(11, 20, 26, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 3px dashed var(--primary-color);
+    animation: ${fadeInBubble} 0.2s ease-out;
+
+    .drag-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      color: white;
+      text-align: center;
+
+      .cloud-icon {
+        font-size: 4rem;
+        color: var(--primary-color);
+      }
+
+      h3 {
+        font-size: 1.4rem;
+      }
+      p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  /* --- LIGHTBOX MODAL --- */
+  .lightbox-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+
+    .close-lightbox {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 2.2rem;
+      cursor: pointer;
+    }
+
+    img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      object-fit: contain;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+  }
+
+  /* --- ATTACHMENTS & MEDIA BUBBLES --- */
+  .media-attachment {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    .chat-img-thumb {
+      max-width: 260px;
+      max-height: 220px;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      &:hover { transform: scale(1.02); }
+    }
+
+    .media-caption {
+      font-size: 0.9rem;
+      margin-top: 2px;
+    }
+
+    .doc-card {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      min-width: 200px;
+
+      .doc-icon-box {
+        font-size: 1.6rem;
+        color: white;
+        display: flex;
+        align-items: center;
+      }
+
+      .doc-details {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+
+        .doc-name {
+          font-size: 0.88rem;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .doc-size {
+          font-size: 0.72rem;
+          opacity: 0.8;
+        }
+      }
+
+      .download-btn {
+        color: white;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        padding: 0.2rem;
+        &:hover { opacity: 0.8; }
+      }
+    }
+
+    .voice-player {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.5rem 0.8rem;
+      border-radius: 20px;
+      min-width: 180px;
+
+      .play-icon-box {
+        background: white;
+        color: var(--primary-color);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        cursor: pointer;
+      }
+
+      .voice-wave-container {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        flex: 1;
+
+        .voice-wave-bar {
+          width: 3px;
+          height: 10px;
+          background: white;
+          border-radius: 2px;
+          opacity: 0.8;
+
+          &.tall {
+            height: 18px;
+          }
+        }
+      }
+
+      .voice-duration {
+        font-size: 0.78rem;
+        font-family: monospace;
+        opacity: 0.9;
       }
     }
   }
