@@ -101,24 +101,29 @@ export default function Chat() {
   };
 
   return (
-    <Container>
+    <Container className={currentChat ? "chat-active" : "contacts-active"}>
       <div className="container">
-        <Contacts 
-          contacts={contacts} 
-          currentUser={currentUser} 
-          changeChat={handleChatChange} 
-          onSettingsClick={() => setIsSettingsOpen(true)}
-        />
-        
-        {currentChat === undefined ? (
-          <Welcome currentUser={currentUser} />
-        ) : (
-          <ChatContainer 
-            currentChat={currentChat} 
+        <div className="contacts-pane">
+          <Contacts 
+            contacts={contacts} 
             currentUser={currentUser} 
-            socket={socket} 
+            changeChat={handleChatChange} 
+            onSettingsClick={() => setIsSettingsOpen(true)}
           />
-        )}
+        </div>
+        
+        <div className="chat-pane">
+          {currentChat === undefined ? (
+            <Welcome currentUser={currentUser} />
+          ) : (
+            <ChatContainer 
+              currentChat={currentChat} 
+              currentUser={currentUser} 
+              socket={socket} 
+              onBack={() => setCurrentChat(undefined)}
+            />
+          )}
+        </div>
 
         {currentUser && (
           <Settings 
@@ -129,7 +134,6 @@ export default function Chat() {
           />
         )}
       </div>
-      {/* 👇 Added Global Toast Container here */}
       <ToastContainer />
     </Container>
   );
@@ -149,9 +153,35 @@ const Container = styled.div`
     width: 100vw;
     background-color: var(--panel-bg);
     display: grid;
-    grid-template-columns: 25% 75%;
-    @media screen and (min-width: 720px) and (max-width: 1080px) {
+    grid-template-columns: 28% 72%;
+    @media screen and (min-width: 721px) and (max-width: 1080px) {
       grid-template-columns: 35% 65%;
+    }
+
+    @media screen and (max-width: 720px) {
+      display: flex;
+      position: relative;
+      overflow: hidden;
+
+      .contacts-pane, .chat-pane {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transition: transform 0.3s ease-in-out;
+      }
+    }
+  }
+
+  @media screen and (max-width: 720px) {
+    &.contacts-active {
+      .contacts-pane { transform: translateX(0); z-index: 5; }
+      .chat-pane { transform: translateX(100%); z-index: 1; }
+    }
+    &.chat-active {
+      .contacts-pane { transform: translateX(-100%); z-index: 1; }
+      .chat-pane { transform: translateX(0); z-index: 5; }
     }
   }
 `;

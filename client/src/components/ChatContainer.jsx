@@ -8,10 +8,11 @@ import { sendMessageRoute, recieveMessageRoute, deleteMessageRoute } from "../ut
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BsCheck, BsCheckAll } from "react-icons/bs";
+import { IoMdArrowBack } from "react-icons/io";
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
-export default function ChatContainer({ currentChat, currentUser, socket }) {
+export default function ChatContainer({ currentChat, currentUser, socket, onBack }) {
   const [messages, setMessages] = useState([]);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -281,13 +282,20 @@ export default function ChatContainer({ currentChat, currentUser, socket }) {
   return (
     <Container>
       <div className="chat-header">
-        <div className="user-details" onClick={() => setIsInfoOpen(true)}>
-          <div className="avatar">
-            <img src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} alt="" />
-          </div>
-          <div className="username">
-            <h3>{currentChat.username}</h3>
-            {isTyping && <span className="typing-text">typing...</span>}
+        <div className="header-left">
+          {onBack && (
+            <button className="back-btn" onClick={onBack} title="Back to Contacts">
+              <IoMdArrowBack />
+            </button>
+          )}
+          <div className="user-details" onClick={() => setIsInfoOpen(true)}>
+            <div className="avatar">
+              <img src={`data:image/svg+xml;base64,${currentChat.avatarImage}`} alt="" />
+            </div>
+            <div className="username">
+              <h3>{currentChat.username}</h3>
+              {isTyping && <span className="typing-text">typing...</span>}
+            </div>
           </div>
         </div>
       </div>
@@ -427,10 +435,36 @@ const Container = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 2rem;
+    padding: 0 1.5rem;
     background-color: var(--panel-bg);
     border-bottom: 1px solid rgba(134, 150, 160, 0.15);
     z-index: 10;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+
+      .back-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-main);
+        font-size: 1.4rem;
+        cursor: pointer;
+        padding: 0.4rem !important;
+        display: flex;
+        align-items: center;
+        border-radius: 50% !important;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        @media screen and (min-width: 721px) {
+          display: none;
+        }
+      }
+    }
 
     .user-details {
       display: flex;
