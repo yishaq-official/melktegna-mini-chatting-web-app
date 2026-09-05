@@ -7,21 +7,20 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { setAvatarRoute } from "../utils/APIRoutes";
+import { useTheme } from "../context/ThemeContext";
 
 export default function SetAvatar() {
-  // const api = `https://api.multiavatar.com/4645646`; // Public Open Source Avatar API
   const api = "https://api.dicebear.com/9.x/avataaars/svg";
   const navigate = useNavigate();
+  const { isLight } = useTheme();
   
   const [avatars, setAvatars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAvatar, setSelectedAvatar] = useState(undefined);
 
-  // Theme check
-  const isLight = document.body.classList.contains("light-theme");
   const toastOptions = {
     position: "bottom-right",
-    autoClose: 8000,
+    autoClose: 5000,
     pauseOnHover: true,
     draggable: true,
     theme: isLight ? "light" : "dark",
@@ -32,7 +31,7 @@ export default function SetAvatar() {
     if (!localStorage.getItem("melktegna-user")) {
       navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   // 2. Fetch Avatars from API
   // Replace the existing fetching useEffect with this:
@@ -143,47 +142,66 @@ const Container = styled.div`
   }
 
   .title-container {
+    padding: 0 1.5rem;
+    text-align: center;
     h1 {
       color: var(--text-main);
+      font-size: 1.6rem;
     }
   }
 
   .avatars {
     display: flex;
-    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    max-width: 90vw;
 
     .avatar {
-      border: 0.4rem solid transparent;
-      padding: 0.4rem;
-      border-radius: 5rem;
+      border: 0.35rem solid transparent;
+      padding: 0.3rem;
+      border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: 0.5s ease-in-out;
+      transition: border-color 0.25s ease, transform 0.25s ease;
       cursor: pointer;
       
       img {
-        height: 6rem;
-        transition: 0.5s ease-in-out;
+        height: 5.5rem;
+        width: 5.5rem;
+        transition: transform 0.25s ease;
+      }
+
+      &:hover {
+        transform: scale(1.06);
       }
     }
+
     .selected {
-      border: 0.4rem solid var(--primary-color);
+      border-color: var(--primary-color);
+      box-shadow: 0 0 15px var(--primary-glow);
     }
   }
 
   .submit-btn {
     background-color: var(--primary-color);
     color: white;
-    padding: 1rem 2rem;
+    padding: 0.9rem 2.2rem;
     border: none;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
-    border-radius: 0.4rem;
+    border-radius: 0.6rem;
     font-size: 1rem;
-    text-transform: uppercase;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+
     &:hover {
       background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
     }
   }
 `;

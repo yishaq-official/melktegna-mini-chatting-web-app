@@ -78,7 +78,7 @@ export default function Register() {
         // Redirect to set avatar for a complete profile
         navigate("/setAvatar");
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error. Please try again.", toastOptions);
     } finally {
       setIsLoading(false);

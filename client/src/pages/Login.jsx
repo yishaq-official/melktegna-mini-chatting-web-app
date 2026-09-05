@@ -65,7 +65,7 @@ export default function Login() {
         localStorage.setItem("melktegna-user", JSON.stringify(data.user));
         navigate("/chat");
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error. Please try again.", toastOptions);
     } finally {
       setIsLoading(false);
