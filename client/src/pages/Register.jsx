@@ -14,7 +14,6 @@ export default function Register() {
   const { isLight, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   
-  // State for form fields
   const [values, setValues] = useState({
     username: "",
     email: "",
@@ -22,11 +21,8 @@ export default function Register() {
     confirmPassword: "",
   });
 
-  // We determine toast theme based on body class (simple check)
-  const isLight = document.body.classList.contains("light-theme");
   const toastOptions = {
     position: "bottom-right",
-    autoClose: 8000,
     autoClose: 5000,
     pauseOnHover: true,
     draggable: true,
@@ -37,7 +33,6 @@ export default function Register() {
     if (localStorage.getItem("melktegna-user")) {
       navigate("/chat");
     }
-  }, []);
   }, [navigate]);
 
   const handleChange = (event) => {
@@ -46,22 +41,15 @@ export default function Register() {
 
   const handleValidation = () => {
     const { password, confirmPassword, username, email } = values;
-    if (password !== confirmPassword) {
-      toast.error("Password and confirm password should be same.", toastOptions);
     if (username.trim().length < 3) {
       toast.error("Username must be at least 3 characters long.", toastOptions);
       return false;
-    } else if (username.length < 3) {
-      toast.error("Username should be greater than 3 characters.", toastOptions);
     } else if (email.trim() === "") {
       toast.error("Valid email is required.", toastOptions);
       return false;
     } else if (password.length < 8) {
-      toast.error("Password should be equal or greater than 8 characters.", toastOptions);
       toast.error("Password must be at least 8 characters long.", toastOptions);
       return false;
-    } else if (email === "") {
-      toast.error("Email is required.", toastOptions);
     } else if (password !== confirmPassword) {
       toast.error("Passwords do not match.", toastOptions);
       return false;
@@ -71,15 +59,12 @@ export default function Register() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (handleValidation()) {
     if (!handleValidation()) return;
 
     setIsLoading(true);
     try {
       const { email, username, password } = values;
       const { data } = await axios.post(registerRoute, {
-        username,
-        email,
         username: username.trim(),
         email: email.trim(),
         password,
@@ -90,7 +75,6 @@ export default function Register() {
       }
       if (data.status === true) {
         localStorage.setItem("melktegna-user", JSON.stringify(data.user));
-        navigate("/");
         // Redirect to set avatar for a complete profile
         navigate("/setAvatar");
       }
@@ -103,41 +87,6 @@ export default function Register() {
 
   return (
     <>
-      <FormContainer>
-        <form action="" onSubmit={(event) => handleSubmit(event)}>
-          <div className="brand">
-            <h1>Melktegna</h1>
-          </div>
-          <input
-            type="text"
-            placeholder="Username"
-            name="username"
-            onChange={(e) => handleChange(e)}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            name="email"
-            onChange={(e) => handleChange(e)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            name="password"
-            onChange={(e) => handleChange(e)}
-          />
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            name="confirmPassword"
-            onChange={(e) => handleChange(e)}
-          />
-          <button type="submit">Create User</button>
-          <span>
-            Already have an account? <Link to="/login">Login.</Link>
-          </span>
-        </form>
-      </FormContainer>
       <PageContainer>
         <TopBar>
           <button className="nav-btn" onClick={() => navigate("/")} title="Back to Home">
@@ -218,20 +167,13 @@ export default function Register() {
   );
 }
 
-// STYLES REFACTORED TO USE CSS VARIABLES
-const FormContainer = styled.div`
-  height: 100vh;
 const PageContainer = styled.div`
   min-height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1rem;
   align-items: center;
-  background-color: var(--bg-color); /* CHANGED */
-  
-  .brand {
   background-color: var(--bg-color);
   padding: 1.5rem;
   position: relative;
@@ -250,7 +192,6 @@ const TopBar = styled.div`
   .nav-btn {
     display: flex;
     align-items: center;
-    gap: 1rem;
     gap: 0.4rem;
     color: var(--text-secondary);
     font-size: 0.95rem;
@@ -273,9 +214,6 @@ const TopBar = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    h1 {
-      color: var(--text-main); /* CHANGED */
-      text-transform: uppercase;
     &:hover {
       color: var(--primary-color);
       background: var(--primary-light);
@@ -296,25 +234,8 @@ const CardWrapper = styled.div`
   form {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    background-color: var(--form-bg); /* CHANGED */
-    border-radius: 2rem;
-    padding: 3rem 5rem;
-    box-shadow: 0px 5px 15px var(--shadow-color); /* Added Shadow for depth */
-  }
     gap: 1.3rem;
 
-  input {
-    background-color: var(--input-bg); /* CHANGED */
-    padding: 1rem;
-    border: 0.1rem solid var(--input-border); /* CHANGED */
-    border-radius: 0.4rem;
-    color: var(--text-main); /* CHANGED */
-    width: 100%;
-    font-size: 1rem;
-    &:focus {
-      border: 0.1rem solid var(--input-focus-border); /* CHANGED */
-      outline: none;
     .brand {
       display: flex;
       flex-direction: column;
@@ -327,8 +248,6 @@ const CardWrapper = styled.div`
         font-size: 0.92rem;
       }
     }
-    &::placeholder {
-      color: var(--text-secondary); /* CHANGED */
 
     .input-field {
       width: 100%;
@@ -354,21 +273,7 @@ const CardWrapper = styled.div`
         }
       }
     }
-  }
 
-  button {
-    background-color: var(--primary-color); /* CHANGED */
-    color: white;
-    padding: 1rem 2rem;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 0.4rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-    transition: 0.3s ease-in-out;
-    &:hover {
-      background-color: var(--primary-hover); /* CHANGED */
     .submit-btn {
       background-color: var(--primary-color);
       color: #ffffff;
@@ -396,15 +301,7 @@ const CardWrapper = styled.div`
         cursor: not-allowed;
       }
     }
-  }
 
-  span {
-    color: var(--text-main); /* CHANGED */
-    text-transform: uppercase;
-    a {
-      color: var(--link-color); /* CHANGED */
-      text-decoration: none;
-      font-weight: bold;
     .footer-note {
       text-align: center;
       color: var(--text-secondary);

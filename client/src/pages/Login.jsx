@@ -19,23 +19,18 @@ export default function Login() {
     password: "",
   });
 
-  // Theme-aware toast options
-  const isLight = document.body.classList.contains("light-theme");
   const toastOptions = {
     position: "bottom-right",
-    autoClose: 8000,
     autoClose: 5000,
     pauseOnHover: true,
     draggable: true,
     theme: isLight ? "light" : "dark",
   };
 
-  // 1. Check if user is already logged in
   useEffect(() => {
     if (localStorage.getItem("melktegna-user")) {
       navigate("/chat");
     }
-  }, []);
   }, [navigate]);
 
   const handleChange = (event) => {
@@ -44,11 +39,7 @@ export default function Login() {
 
   const validateForm = () => {
     const { username, password } = values;
-    if (username === "") {
     if (username.trim() === "" || password === "") {
-      toast.error("Username and Password are required.", toastOptions);
-      return false;
-    } else if (password === "") {
       toast.error("Username and Password are required.", toastOptions);
       return false;
     }
@@ -57,14 +48,12 @@ export default function Login() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (validateForm()) {
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
       const { username, password } = values;
       const { data } = await axios.post(loginRoute, {
-        username,
         username: username.trim(),
         password,
       });
@@ -85,30 +74,6 @@ export default function Login() {
 
   return (
     <>
-      <FormContainer>
-        <form action="" onSubmit={(event) => handleSubmit(event)}>
-          <div className="brand">
-            <h1>Melktegna</h1>
-          </div>
-          <input
-            type="text"
-            placeholder="Username"
-            name="username"
-            onChange={(e) => handleChange(e)}
-            min="3"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            name="password"
-            onChange={(e) => handleChange(e)}
-          />
-          <button type="submit">Log In</button>
-          <span>
-            Don't have an account? <Link to="/register">Create One.</Link>
-          </span>
-        </form>
-      </FormContainer>
       <PageContainer>
         <TopBar>
           <button className="nav-btn" onClick={() => navigate("/")} title="Back to Home">
@@ -165,20 +130,14 @@ export default function Login() {
   );
 }
 
-// Uses the same CSS Variables we set up earlier
-const FormContainer = styled.div`
-  height: 100vh;
 const PageContainer = styled.div`
   min-height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1rem;
   align-items: center;
   background-color: var(--bg-color);
-  
-  .brand {
   padding: 1.5rem;
   position: relative;
   transition: background-color 0.25s ease;
@@ -196,7 +155,6 @@ const TopBar = styled.div`
   .nav-btn {
     display: flex;
     align-items: center;
-    gap: 1rem;
     gap: 0.4rem;
     color: var(--text-secondary);
     font-size: 0.95rem;
@@ -219,9 +177,6 @@ const TopBar = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    h1 {
-      color: var(--text-main);
-      text-transform: uppercase;
     &:hover {
       color: var(--primary-color);
       background: var(--primary-light);
@@ -242,25 +197,8 @@ const CardWrapper = styled.div`
   form {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    background-color: var(--form-bg);
-    border-radius: 2rem;
-    padding: 5rem;
-    box-shadow: 0px 5px 15px var(--shadow-color);
-  }
     gap: 1.5rem;
 
-  input {
-    background-color: var(--input-bg);
-    padding: 1rem;
-    border: 0.1rem solid var(--input-border);
-    border-radius: 0.4rem;
-    color: var(--text-main);
-    width: 100%;
-    font-size: 1rem;
-    &:focus {
-      border: 0.1rem solid var(--input-focus-border);
-      outline: none;
     .brand {
       display: flex;
       flex-direction: column;
@@ -273,8 +211,6 @@ const CardWrapper = styled.div`
         font-size: 0.92rem;
       }
     }
-    &::placeholder {
-      color: var(--text-secondary);
 
     .input-field {
       width: 100%;
@@ -300,21 +236,7 @@ const CardWrapper = styled.div`
         }
       }
     }
-  }
 
-  button {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 1rem 2rem;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 0.4rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-    transition: 0.3s ease-in-out;
-    &:hover {
-      background-color: var(--primary-hover);
     .submit-btn {
       background-color: var(--primary-color);
       color: #ffffff;
@@ -341,15 +263,7 @@ const CardWrapper = styled.div`
         cursor: not-allowed;
       }
     }
-  }
 
-  span {
-    color: var(--text-main);
-    text-transform: uppercase;
-    a {
-      color: var(--link-color);
-      text-decoration: none;
-      font-weight: bold;
     .footer-note {
       text-align: center;
       color: var(--text-secondary);
