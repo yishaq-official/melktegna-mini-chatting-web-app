@@ -18,9 +18,12 @@ import {
   IoMdClose,
 } from "react-icons/io";
 
+import { useTheme } from "../context/ThemeContext";
+
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
 export default function ChatContainer({ currentChat, currentUser, socket, onBack }) {
+  const { isLight } = useTheme();
   const [messages, setMessages] = useState([]);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -43,7 +46,7 @@ export default function ChatContainer({ currentChat, currentUser, socket, onBack
     autoClose: 5000,
     pauseOnHover: true,
     draggable: true,
-    theme: "dark",
+    theme: isLight ? "light" : "dark",
   };
 
   // 1. Fetch Chat History
@@ -564,15 +567,17 @@ const Container = styled.div`
   gap: 0.1rem;
   overflow: hidden;
   height: 100vh;
+  background-color: var(--bg-color);
 
   .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 1.5rem;
-    background-color: var(--panel-bg);
-    border-bottom: 1px solid rgba(134, 150, 160, 0.15);
+    background-color: var(--panel-header-bg);
+    border-bottom: 1px solid var(--border-color);
     z-index: 10;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
 
     .header-left {
       display: flex;
@@ -585,13 +590,14 @@ const Container = styled.div`
         color: var(--text-main);
         font-size: 1.4rem;
         cursor: pointer;
-        padding: 0.4rem !important;
+        padding: 0.4rem;
         display: flex;
         align-items: center;
-        border-radius: 50% !important;
+        border-radius: 50%;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--primary-light);
+          color: var(--primary-color);
         }
 
         @media screen and (min-width: 721px) {
@@ -626,10 +632,12 @@ const Container = styled.div`
     flex-direction: column;
     gap: 1rem;
     overflow: auto;
-    background-color: #0b141a;
-    background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+    background-color: var(--chat-bg);
+    background-image: radial-gradient(var(--border-color) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    transition: background-color 0.25s ease;
 
-    &::-webkit-scrollbar { width: 0.25rem; &-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 1rem; }}
+    &::-webkit-scrollbar { width: 0.25rem; &-thumb { background-color: var(--scrollbar-thumb); border-radius: 1rem; }}
 
     .message-wrapper-outer {
       display: flex;
@@ -655,47 +663,45 @@ const Container = styled.div`
         transform: translateY(6px);
         pointer-events: none;
         transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        background: var(--panel-bg);
-        border: 1px solid rgba(134, 150, 160, 0.25);
+        background: var(--dropdown-bg);
+        border: 1px solid var(--border-color);
         border-radius: 20px;
         padding: 2px 6px;
         display: flex;
         gap: 4px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow-md);
         z-index: 15;
 
         .reaction-btn {
           background: none;
           border: none;
           font-size: 1.1rem;
-          padding: 3px 5px !important;
+          padding: 3px 5px;
           cursor: pointer;
-          border-radius: 50% !important;
+          border-radius: 50%;
           transition: transform 0.15s ease;
 
           &:hover {
-            transform: scale(1.3);
-            background: rgba(255, 255, 255, 0.1) !important;
+            transform: scale(1.25);
+            background: var(--primary-light);
           }
         }
       }
 
       .content {
-        max-width: 48%;
+        max-width: 60%;
         min-width: 120px;
         overflow-wrap: break-word;
         padding: 0.6rem 0.9rem 0.4rem 0.9rem;
         font-size: 0.95rem;
         border-radius: 12px;
-        color: #d1d7db;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        user-select: none; 
+        box-shadow: var(--shadow-sm);
+        user-select: text; 
         position: relative;
 
         .message-wrapper { display: flex; flex-direction: column; gap: 5px; }
 
         .reply-block {
-            background-color: rgba(0, 0, 0, 0.25);
             border-left: 3px solid var(--primary-color);
             border-radius: 6px;
             padding: 4px 8px;
@@ -704,7 +710,7 @@ const Container = styled.div`
             cursor: pointer;
             
             .reply-name { color: var(--primary-color); font-weight: 600; font-size: 0.75rem; margin-bottom: 2px; }
-            .reply-text { color: #b9c3c9; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+            .reply-text { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; opacity: 0.85; }
         }
 
         .actual-text { margin-top: 2px; line-height: 1.4; }
@@ -720,16 +726,17 @@ const Container = styled.div`
 
           .timestamp {
             font-size: 0.68rem;
-            color: rgba(255, 255, 255, 0.6);
+            opacity: 0.75;
           }
 
           .tick-icon {
             font-size: 1rem;
             display: flex;
             align-items: center;
-            color: rgba(255, 255, 255, 0.6);
+            opacity: 0.75;
             &.read {
               color: #53bdeb;
+              opacity: 1;
             }
           }
         }
@@ -741,8 +748,8 @@ const Container = styled.div`
           clear: both;
 
           .reaction-chip {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 1px 6px;
             font-size: 0.75rem;
@@ -753,14 +760,14 @@ const Container = styled.div`
             transition: all 0.2s ease;
 
             &.active {
-              background: rgba(0, 168, 132, 0.3);
+              background: var(--primary-light);
               border-color: var(--primary-color);
             }
 
             .count {
               font-size: 0.7rem;
               font-weight: bold;
-              color: #e9edef;
+              color: var(--text-main);
             }
 
             &:hover {
@@ -775,15 +782,18 @@ const Container = styled.div`
       justify-content: flex-end;
       .quick-reaction-bar { right: 10px; }
       .content {
-        background-color: var(--primary-color);
-        color: white;
+        background-color: var(--bubble-sent);
+        color: var(--bubble-sent-text);
         border-bottom-right-radius: 2px;
         
         .reply-block {
-            background-color: rgba(0, 0, 0, 0.2);
-            border-left: 3px solid #ffffff;
-            .reply-name { color: #ffffff; }
-            .reply-text { color: #e9edef; }
+            background-color: rgba(0, 0, 0, 0.12);
+            .reply-name { color: var(--bubble-sent-text); }
+            .reply-text { color: var(--bubble-sent-text); }
+        }
+
+        .message-footer .timestamp {
+          color: var(--bubble-sent-text);
         }
       }
     }
@@ -792,9 +802,16 @@ const Container = styled.div`
       justify-content: flex-start;
       .quick-reaction-bar { left: 10px; }
       .content {
-        background-color: var(--panel-bg);
-        color: var(--text-main);
+        background-color: var(--bubble-received);
+        color: var(--bubble-received-text);
+        border: 1px solid var(--border-light);
         border-bottom-left-radius: 2px;
+
+        .reply-block {
+            background-color: var(--input-bg);
+            .reply-name { color: var(--primary-color); }
+            .reply-text { color: var(--text-secondary); }
+        }
 
         .message-footer .timestamp {
           color: var(--text-secondary);
@@ -809,7 +826,8 @@ const Container = styled.div`
       animation: ${fadeInBubble} 0.2s ease-out;
 
       .typing-bubble {
-        background-color: var(--panel-bg);
+        background-color: var(--bubble-received);
+        border: 1px solid var(--border-light);
         padding: 0.6rem 1rem;
         border-radius: 12px;
         border-bottom-left-radius: 2px;

@@ -13,8 +13,10 @@ import {
 } from "react-icons/io";
 import styled, { keyframes } from "styled-components";
 import Picker from "emoji-picker-react";
+import { useTheme } from "../context/ThemeContext";
 
 export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, socket, currentChat, currentUser }) {
+  const { isLight } = useTheme();
   const [msg, setMsg] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -25,12 +27,30 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, sock
   const [recordingTime, setRecordingTime] = useState(0);
   
   const inputRef = useRef(null);
+  const emojiPickerRef = useRef(null);
+  const attachMenuRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   
   const imageInputRef = useRef(null);
   const docInputRef = useRef(null);
   const audioInputRef = useRef(null);
+
+  // Close emoji picker and attach menu when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
+        setShowEmojiPicker(false);
+      }
+      if (attachMenuRef.current && !attachMenuRef.current.contains(e.target)) {
+        setShowAttachMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
 
   // Focus input when replying starts
   useEffect(() => {
@@ -39,10 +59,9 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, sock
     }
   }, [replyingTo]);
 
-  // Handle Recording Timer
+  // Handle Recording Timer (without cascading setState in effect body)
   useEffect(() => {
     if (isRecording) {
-      setRecordingTime(0);
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -125,6 +144,7 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, sock
 
   // Voice recording actions
   const startRecording = () => {
+    setRecordingTime(0);
     setIsRecording(true);
     setShowAttachMenu(false);
   };
@@ -238,7 +258,7 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, sock
                 title="Attach file"
               />
               {showAttachMenu && (
-                <div className="attach-menu">
+                <div className="attach-menu" ref={attachMenuRef}>
                   <button
                     type="button"
                     className="menu-item photos"
@@ -275,8 +295,8 @@ export default function ChatInput({ handleSendMsg, replyingTo, cancelReply, sock
                 title="Emoji"
               />
               {showEmojiPicker && (
-                <div className="emoji-picker-react">
-                  <Picker onEmojiClick={handleEmojiClick} theme="dark" />
+                <div className="emoji-picker-react" ref={emojiPickerRef}>
+                  <Picker onEmojiClick={handleEmojiClick} theme={isLight ? "light" : "dark"} />
                 </div>
               )}
             </div>
