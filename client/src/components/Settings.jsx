@@ -131,7 +131,7 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
 
         <div className="section row">
             <span>Theme</span>
-            <div className="theme-toggle" onClick={handleThemeChange}>
+            <div className="theme-toggle" onClick={toggleTheme}>
                 {theme === "dark" ? <IoMdMoon /> : <IoMdSunny />}
                 <span>{theme === "dark" ? "Dark Mode" : "Light Mode"}</span>
             </div>
