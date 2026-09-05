@@ -349,27 +349,30 @@ const Container = styled.div`
   background-color: var(--panel-bg);
   padding: 0.5rem 1.5rem;
   position: relative;
-  border-top: 1px solid rgba(134, 150, 160, 0.12);
+  border-top: 1px solid var(--border-color);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 
   .preview-bar {
     position: absolute;
     bottom: 100%;
     left: 0;
     width: 100%;
-    background-color: #1f2c34;
+    background-color: var(--dropdown-bg);
     padding: 0.6rem 1.5rem;
     border-top: 2px solid var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 5;
+    box-shadow: var(--shadow-md);
     animation: ${popIn} 0.2s ease-out;
 
     .close-btn {
       color: var(--text-secondary);
       font-size: 1.4rem;
       cursor: pointer;
-      &:hover { color: white; }
+      &:hover { color: var(--text-main); }
     }
   }
 
@@ -521,14 +524,14 @@ const Container = styled.div`
           position: absolute;
           bottom: 45px;
           left: 0;
-          background: var(--panel-bg);
-          border: 1px solid rgba(134, 150, 160, 0.25);
+          background: var(--dropdown-bg);
+          border: 1px solid var(--border-color);
           border-radius: 12px;
           padding: 6px;
           display: flex;
           flex-direction: column;
           gap: 4px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+          box-shadow: var(--shadow-lg);
           z-index: 20;
           width: 170px;
           animation: ${popIn} 0.18s ease-out;
@@ -540,11 +543,12 @@ const Container = styled.div`
             background: transparent;
             border: none;
             color: var(--text-main);
-            padding: 0.5rem 0.8rem !important;
-            font-size: 0.88rem !important;
-            border-radius: 8px !important;
+            padding: 0.5rem 0.8rem;
+            font-size: 0.88rem;
+            border-radius: 8px;
             cursor: pointer;
             width: 100%;
+            transition: background-color 0.15s ease;
 
             svg { font-size: 1.2rem; }
 
@@ -553,7 +557,7 @@ const Container = styled.div`
             &.audio svg { color: #ab47bc; }
 
             &:hover {
-              background: rgba(255, 255, 255, 0.08) !important;
+              background: var(--primary-light);
             }
           }
         }

@@ -156,15 +156,16 @@ const Container = styled.div`
   grid-template-rows: 8% 14% 71% 7%;
   overflow: hidden;
   background-color: var(--panel-bg);
-  border-right: 1px solid rgba(134, 150, 160, 0.15);
+  border-right: 1px solid var(--border-color);
   height: 100vh;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 
   .brand {
     display: flex;
     align-items: center;
     gap: 1rem;
     justify-content: center;
-    border-bottom: 1px solid rgba(134, 150, 160, 0.1);
+    border-bottom: 1px solid var(--border-light);
     h3 {
       color: var(--text-main);
       text-transform: uppercase;
@@ -178,15 +179,21 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    border-bottom: 1px solid rgba(134, 150, 160, 0.1);
+    border-bottom: 1px solid var(--border-light);
 
     .search-box {
       display: flex;
       align-items: center;
       background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 20px;
       padding: 0.4rem 0.8rem;
       gap: 0.5rem;
+      transition: border-color 0.2s ease;
+
+      &:focus-within {
+        border-color: var(--input-focus-border);
+      }
 
       .search-icon {
         color: var(--text-secondary);
@@ -194,12 +201,12 @@ const Container = styled.div`
       }
 
       input {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
+        background: transparent;
+        border: none;
+        padding: 0;
         color: var(--text-main);
         width: 100%;
-        font-size: 0.88rem !important;
+        font-size: 0.88rem;
 
         &:focus {
           outline: none;
@@ -226,11 +233,11 @@ const Container = styled.div`
 
       .tab {
         background: transparent;
-        border: 1px solid rgba(134, 150, 160, 0.2) !important;
+        border: 1px solid var(--border-color);
         color: var(--text-secondary);
-        padding: 0.25rem 0.75rem !important;
-        border-radius: 14px !important;
-        font-size: 0.78rem !important;
+        padding: 0.25rem 0.75rem;
+        border-radius: 14px;
+        font-size: 0.78rem;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -238,13 +245,13 @@ const Container = styled.div`
         transition: all 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.05);
-          color: var(--text-main);
+          background: var(--primary-light);
+          color: var(--primary-color);
         }
 
         &.active {
-          background: var(--primary-color) !important;
-          border-color: var(--primary-color) !important;
+          background: var(--primary-color);
+          border-color: var(--primary-color);
           color: white;
           font-weight: 600;
         }
@@ -422,16 +429,24 @@ const Button = styled.button`
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.5rem !important;
+  padding: 0.5rem;
   border-radius: 0.5rem;
   background-color: var(--primary-color);
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+
   svg {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     color: white;
   }
+
   &:hover {
     background-color: var(--primary-hover);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.96);
   }
 `;
