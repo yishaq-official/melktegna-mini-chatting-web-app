@@ -1,6 +1,8 @@
+import React, { useEffect, useState } from "react";
 import React from "react";
 import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
+import { IoMdMoon, IoMdSunny, IoMdArrowForward, IoMdFlash, IoMdLock, IoMdInfinite, IoMdColorPalette, IoMdGlobe, IoMdPhonePortrait } from "react-icons/io";
 import { IoMdMoon, IoMdSunny, IoMdArrowForward, IoMdFlash, IoMdLock, IoMdInfinite, IoMdColorPalette, IoMdGlobe, IoMdPhonePortrait, IoMdChatbubbles } from "react-icons/io";
 import { FaGithub, FaTwitter, FaLinkedin } from "react-icons/fa";
 import Logo from "../components/Logo";
@@ -8,8 +10,22 @@ import { useTheme } from "../context/ThemeContext";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(localStorage.getItem("melktegna-theme") || "dark");
   const { isLight, toggleTheme } = useTheme();
   const isLoggedIn = Boolean(localStorage.getItem("melktegna-user"));
+
+  useEffect(() => {
+    if (theme === "light") {
+      document.body.classList.add("light-theme");
+    } else {
+      document.body.classList.remove("light-theme");
+    }
+    localStorage.setItem("melktegna-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   const features = [
     { icon: <IoMdFlash />, title: "Fast", desc: "Melktegna delivers messages faster than any other application." },
@@ -25,6 +41,10 @@ export default function Landing() {
       <Navbar>
         <Logo size="2rem" />
         <div className="nav-actions">
+            <div className="theme-toggle" onClick={toggleTheme}>
+                {theme === "dark" ? <IoMdMoon /> : <IoMdSunny />}
+            </div>
+            <button className="login-btn" onClick={() => navigate("/login")}>
             <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme" aria-label="Toggle theme">
                 {isLight ? <IoMdMoon /> : <IoMdSunny />}
             </button>
@@ -35,6 +55,7 @@ export default function Landing() {
             ) : (
               <button className="login-btn" onClick={() => navigate("/login")}>
                 Login
+            </button>
               </button>
             )}
         </div>
@@ -51,6 +72,7 @@ export default function Landing() {
                 Fast, secure, and designed for you. Join the Melktegna community today.
             </p>
             <div className="cta-group">
+                <button className="primary-btn" onClick={() => navigate("/register")}>
                 {isLoggedIn ? (
                   <button className="primary-btn" onClick={() => navigate("/chat")}>
                     Continue to Chat <IoMdChatbubbles />
@@ -58,6 +80,7 @@ export default function Landing() {
                 ) : (
                   <button className="primary-btn" onClick={() => navigate("/register")}>
                     Get Started <IoMdArrowForward />
+                </button>
                   </button>
                 )}
             </div>

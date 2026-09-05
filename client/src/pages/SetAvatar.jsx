@@ -10,6 +10,7 @@ import { setAvatarRoute } from "../utils/APIRoutes";
 import { useTheme } from "../context/ThemeContext";
 
 export default function SetAvatar() {
+  // const api = `https://api.multiavatar.com/4645646`; // Public Open Source Avatar API
   const api = "https://api.dicebear.com/9.x/avataaars/svg";
   const navigate = useNavigate();
   const { isLight } = useTheme();
@@ -18,8 +19,11 @@ export default function SetAvatar() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedAvatar, setSelectedAvatar] = useState(undefined);
 
+  // Theme check
+  const isLight = document.body.classList.contains("light-theme");
   const toastOptions = {
     position: "bottom-right",
+    autoClose: 8000,
     autoClose: 5000,
     pauseOnHover: true,
     draggable: true,
@@ -31,6 +35,7 @@ export default function SetAvatar() {
     if (!localStorage.getItem("melktegna-user")) {
       navigate("/login");
     }
+  }, []);
   }, [navigate]);
 
   // 2. Fetch Avatars from API
@@ -152,22 +157,29 @@ const Container = styled.div`
 
   .avatars {
     display: flex;
+    gap: 2rem;
     flex-wrap: wrap;
     justify-content: center;
     gap: 1.5rem;
     max-width: 90vw;
 
     .avatar {
+      border: 0.4rem solid transparent;
+      padding: 0.4rem;
+      border-radius: 5rem;
       border: 0.35rem solid transparent;
       padding: 0.3rem;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: 0.5s ease-in-out;
       transition: border-color 0.25s ease, transform 0.25s ease;
       cursor: pointer;
       
       img {
+        height: 6rem;
+        transition: 0.5s ease-in-out;
         height: 5.5rem;
         width: 5.5rem;
         transition: transform 0.25s ease;
@@ -179,6 +191,7 @@ const Container = styled.div`
     }
 
     .selected {
+      border: 0.4rem solid var(--primary-color);
       border-color: var(--primary-color);
       box-shadow: 0 0 15px var(--primary-glow);
     }
@@ -187,12 +200,16 @@ const Container = styled.div`
   .submit-btn {
     background-color: var(--primary-color);
     color: white;
+    padding: 1rem 2rem;
     padding: 0.9rem 2.2rem;
     border: none;
+    font-weight: bold;
     font-weight: 600;
     cursor: pointer;
+    border-radius: 0.4rem;
     border-radius: 0.6rem;
     font-size: 1rem;
+    text-transform: uppercase;
     transition: background-color 0.2s ease, transform 0.15s ease;
 
     &:hover {
