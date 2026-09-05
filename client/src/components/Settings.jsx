@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import styled from "styled-components";
 import { IoMdClose, IoMdMoon, IoMdSunny, IoMdRefresh } from "react-icons/io";
 import { FaPhoneAlt, FaCamera, FaCheck } from "react-icons/fa";
 import axios from "axios";
 import { setAvatarRoute, generateAvatarRoute } from "../utils/APIRoutes";
-import { toast } from "react-toastify"; // Removed ToastContainer import
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Settings({ isOpen, toggleSettings, currentUser, onAvatarUpdate }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem("melktegna-theme") || "dark");
+  const { theme, toggleTheme, isLight } = useTheme();
   const [phone, setPhone] = useState(currentUser.phoneNumber || "");
   
   // --- AVATAR EDITING STATE ---
@@ -22,7 +23,7 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
     autoClose: 5000,
     pauseOnHover: true,
     draggable: true,
-    theme: "dark",
+    theme: isLight ? "light" : "dark",
   };
 
   const blockedCount = useMemo(() => {
@@ -30,14 +31,6 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
     const localUser = JSON.parse(localStorage.getItem("melktegna-user"));
     return (localUser && localUser.blockedUsers) ? localUser.blockedUsers.length : 0;
   }, [isOpen]);
-
-  useEffect(() => {
-    if (theme === "light") {
-      document.body.classList.add("light-theme");
-    } else {
-      document.body.classList.remove("light-theme");
-    }
-  }, [theme]);
 
   // Fetch Avatars
   const fetchAvatars = async () => {
@@ -75,19 +68,13 @@ export default function Settings({ isOpen, toggleSettings, currentUser, onAvatar
         } else {
             toast.error("Error setting avatar. Please try again.", toastOptions);
         }
-    } catch (error) {
+    } catch {
         toast.error("Network error.", toastOptions);
     }
   };
 
-  const handleThemeChange = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("melktegna-theme", newTheme);
-  };
-
   const handleSaveProfile = () => {
-    alert(`Saving Phone: ${phone} (Backend API pending)`);
+    toast.info("Phone number update coming soon!", toastOptions);
   };
 
   return (
