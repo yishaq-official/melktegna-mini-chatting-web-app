@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {
   margin: 0;
@@ -6,60 +6,163 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Inter', sans-serif; /* Cleaner, more modern font than Josefin */
-  overflow: hidden; /* Prevents double scrollbars */
-}
-
 :root {
-  /* WhatsApp/Telegram Inspired Green Palette */
-  --primary-color: #00a884;       /* The "Melktegna" Green */
+  /* Brand Palette */
+  --primary-color: #00a884;          /* The Melktegna Teal Green */
   --primary-hover: #008f6f;
-  
-  --bg-color: #111b21;            /* Deep dark background (WhatsApp Web Dark) */
-  --panel-bg: #202c33;            /* Sidebar/Cards background */
-  
-  --text-main: #e9edef;           /* Soft White */
-  --text-secondary: #8696a0;      /* Muted Grey */
-  
+  --primary-light: rgba(0, 168, 132, 0.15);
+  --primary-glow: rgba(0, 168, 132, 0.35);
+
+  /* Status & Accents */
+  --danger-color: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-light: rgba(239, 68, 68, 0.15);
+  --online-color: #00c853;
+  --unread-badge: #00a884;
+
+  /* Surfaces (Dark Mode - Default) */
+  --bg-color: #111b21;               /* Deep dark background */
+  --panel-bg: #202c33;               /* Sidebar, modals, drawers */
+  --panel-header-bg: #202c33;
+  --form-bg: #1f2c34;                /* Auth card background */
+  --dropdown-bg: #233138;            /* Context menu / popovers */
+  --chat-bg: #0b141a;                /* Chat conversation canvas */
+  --chat-wallpaper-opacity: 0.08;
+
+  /* Inputs & Controls */
   --input-bg: #2a3942;
-  --input-border: transparent;    /* Clean inputs, no borders */
-  
-  --shadow-color: rgba(0, 0, 0, 0.2);
+  --input-border: rgba(134, 150, 160, 0.15);
+  --input-focus-border: #00a884;
+  --focus-ring: rgba(0, 168, 132, 0.4);
+
+  /* Typography */
+  --text-main: #e9edef;              /* Soft high-contrast white */
+  --text-secondary: #8696a0;         /* Secondary muted text */
+  --text-muted: #667781;
+  --link-color: #00a884;
+
+  /* Chat Bubbles */
+  --bubble-sent: #005c4b;
+  --bubble-sent-text: #e9edef;
+  --bubble-received: #202c33;
+  --bubble-received-text: #e9edef;
+
+  /* Dividers & Borders */
+  --border-color: rgba(134, 150, 160, 0.15);
+  --border-light: rgba(134, 150, 160, 0.08);
+
+  /* Shadows & Depth */
+  --shadow-color: rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+
   --toast-bg: #202c33;
+  --scrollbar-thumb: rgba(134, 150, 160, 0.3);
+  --scrollbar-thumb-hover: rgba(134, 150, 160, 0.5);
 }
 
 body.light-theme {
-  --bg-color: #efeae2;            /* Telegram/WhatsApp light BG pattern color */
+  /* Brand Palette */
+  --primary-color: #008069;
+  --primary-hover: #006a57;
+  --primary-light: rgba(0, 128, 105, 0.12);
+  --primary-glow: rgba(0, 128, 105, 0.25);
+
+  /* Surfaces (Light Mode) */
+  --bg-color: #f0f2f5;
   --panel-bg: #ffffff;
+  --panel-header-bg: #f0f2f5;
+  --form-bg: #ffffff;
+  --dropdown-bg: #ffffff;
+  --chat-bg: #efeae2;
+  --chat-wallpaper-opacity: 0.06;
+
+  /* Inputs & Controls */
+  --input-bg: #f0f2f5;
+  --input-border: #e9edef;
+  --input-focus-border: #008069;
+  --focus-ring: rgba(0, 128, 105, 0.3);
+
+  /* Typography */
   --text-main: #111b21;
   --text-secondary: #667781;
-  --primary-color: #008069;
-  --input-bg: #f0f2f5;
-  --input-border: #ffffff;
+  --text-muted: #8696a0;
+  --link-color: #008069;
+
+  /* Chat Bubbles */
+  --bubble-sent: #d9fdd3;
+  --bubble-sent-text: #111b21;
+  --bubble-received: #ffffff;
+  --bubble-received-text: #111b21;
+
+  /* Dividers & Borders */
+  --border-color: rgba(11, 20, 26, 0.1);
+  --border-light: rgba(11, 20, 26, 0.05);
+
+  /* Shadows & Depth */
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  --toast-bg: #ffffff;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.35);
 }
 
-/* Scrollbar Styling (Slim & Professional) */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Base resets without disruptive !important overrides */
+button {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input, textarea {
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+/* Custom Slim Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(134, 150, 160, 0.3);
+  background-color: var(--scrollbar-thumb);
   border-radius: 10px;
+  transition: background-color 0.2s ease;
 }
 
-/* Global Component Overrides for "Professional" Look */
-button {
-  font-size: 0.9rem !important;
-  padding: 0.8rem 1.5rem !important; /* Smaller, tighter padding */
-  border-radius: 4px !important;     /* Less rounded, more serious */
-}
-
-input {
-  padding: 0.8rem 1rem !important;
-  font-size: 0.95rem !important;
-  border-radius: 8px !important;
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
